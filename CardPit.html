@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Roboto+Mono:wght@500;600;700&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;}
+  body{margin:0;background:#0A0D13;font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased;}
+  input,button{font-family:'Inter',sans-serif;}
+  .ms{font-family:'Material Symbols Rounded';font-weight:400;font-style:normal;line-height:1;letter-spacing:normal;text-transform:none;display:inline-block;white-space:nowrap;direction:ltr;-webkit-font-feature-settings:'liga';font-feature-settings:'liga';}
+  .frame-scroll{overflow-y:auto;scrollbar-width:thin;}
+  .frame-scroll::-webkit-scrollbar{width:6px;}
+  .frame-scroll::-webkit-scrollbar-thumb{background:#252D3D;border-radius:6px;}
+  input[type="range"]{cursor:pointer;width:100%;}
+</style>
+</head>
+<body>
+<div style="min-height:100vh;padding:48px 40px 90px;color:#F0F4FF;">
+
+  <!-- header -->
+  <div style="max-width:1340px;margin:0 auto 46px;">
+    <div style="display:flex;align-items:center;gap:13px;margin-bottom:22px;">
+      <div style="width:34px;height:34px;border-radius:9px;background:#161B27;border:1px solid #252D3D;display:flex;align-items:center;justify-content:center;">
+        <div style="width:13px;height:13px;background:#4F8EF7;transform:rotate(45deg);border-radius:2px;box-shadow:0 0 10px rgba(79,142,247,0.6);"></div>
+      </div>
+      <div style="font:800 24px 'Inter',sans-serif;letter-spacing:-0.02em;">Card<span style="color:#4F8EF7;">Pit</span></div>
+    </div>
+    <h1 style="margin:0 0 8px;font:700 30px 'Inter',sans-serif;letter-spacing:-0.02em;color:#F0F4FF;">Mobiele POS voor TCG-handelaren op beurzen</h1>
+    <p style="margin:0;font:400 16px 'Inter',sans-serif;color:#8B95A8;max-width:680px;">Built for the table. Vijf schermen — opzoeken, afrekenen, klantweergave, instellingen en login. Donker, snel, eenhandig bedienbaar. Tik de conditieknoppen op het eerste scherm aan.</p>
+  </div>
+
+  <div style="display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start;justify-content:center;max-width:2200px;margin:0 auto;">
+
+    <!-- ========================= SCREEN 1 — ZOEKEN ========================= -->
+    <div style="width:404px;flex:0 0 auto;display:flex;flex-direction:column;gap:14px;">
+      <div style="display:flex;align-items:baseline;gap:9px;padding-left:8px;">
+        <span style="font:700 12px 'Roboto Mono',monospace;color:#4F8EF7;">01</span>
+        <span style="font:600 15px 'Inter',sans-serif;color:#F0F4FF;">Zoeken</span>
+        <span style="font:400 13px 'Inter',sans-serif;color:#8B95A8;">&middot; zoeken &amp; berekenen</span>
+      </div>
+      <div style="height:862px;border-radius:44px;background:#05070b;border:1px solid #252D3D;padding:9px;box-shadow:0 36px 70px rgba(0,0,0,0.55);">
+        <div style="height:100%;border-radius:36px;background:#0D1117;overflow:hidden;display:flex;flex-direction:column;position:relative;">
+
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 26px 4px;font:600 14px 'Inter',sans-serif;color:#F0F4FF;flex:0 0 auto;">
+            <span>14:32</span>
+            <div style="display:flex;gap:7px;align-items:center;color:#F0F4FF;">
+              <span class="ms" style="font-size:17px;">signal_cellular_alt</span>
+              <span class="ms" style="font-size:17px;">wifi</span>
+              <span class="ms" style="font-size:18px;">battery_full</span>
+            </div>
+          </div>
+
+          <div class="frame-scroll" style="flex:1;display:flex;flex-direction:column;gap:18px;padding:14px 22px 22px;">
+
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <div style="width:28px;height:28px;border-radius:8px;background:#161B27;border:1px solid #252D3D;display:flex;align-items:center;justify-content:center;">
+                  <div style="width:10px;height:10px;background:#4F8EF7;transform:rotate(45deg);border-radius:2px;"></div>
+                </div>
+                <span style="font:800 19px 'Inter',sans-serif;letter-spacing:-0.02em;">Card<span style="color:#4F8EF7;">Pit</span></span>
+              </div>
+              <span class="ms" style="font-size:24px;color:#8B95A8;cursor:pointer;">settings</span>
+            </div>
+
+            <div style="display:flex;align-items:center;gap:10px;background:#161B27;border:1px solid #252D3D;border-radius:14px;padding:0 7px 0 16px;height:54px;">
+              <span class="ms" style="font-size:21px;color:#8B95A8;">search</span>
+              <input value="Charizard ex" style="flex:1;background:transparent;border:none;outline:none;color:#F0F4FF;font:500 16px 'Inter',sans-serif;min-width:0;" />
+              <div style="width:40px;height:40px;border-radius:11px;background:#4F8EF7;display:flex;align-items:center;justify-content:center;box-shadow:0 0 16px rgba(79,142,247,0.4);cursor:pointer;">
+                <span class="ms" style="font-size:22px;color:#fff;">photo_camera</span>
+              </div>
+            </div>
+
+            <div style="background:#1E2435;border:1px solid #252D3D;border-radius:18px;padding:16px;display:flex;gap:15px;">
+              <div style="width:86px;height:118px;flex:0 0 auto;border-radius:11px;border:1px solid #252D3D;background:repeating-linear-gradient(135deg,#1E2435,#1E2435 7px,#232b3f 7px,#232b3f 14px);display:flex;align-items:center;justify-content:center;">
+                <span style="font:600 10px 'Roboto Mono',monospace;color:#5b6678;letter-spacing:1px;">CARD</span>
+              </div>
+              <div style="flex:1;min-width:0;display:flex;flex-direction:column;">
+                <div style="font:700 20px 'Inter',sans-serif;color:#F0F4FF;letter-spacing:-0.01em;">Charizard ex</div>
+                <div style="font:400 13px 'Inter',sans-serif;color:#8B95A8;margin-top:2px;">Obsidian Flames &middot; 223/197</div>
+                <div style="margin-top:auto;font:500 11px 'Inter',sans-serif;color:#8B95A8;text-transform:uppercase;letter-spacing:0.06em;">Cardmarket trend</div>
+                <div style="font:800 30px 'Inter',sans-serif;color:#4F8EF7;letter-spacing:-0.02em;line-height:1.05;">&euro; 84,50</div>
+                <div style="font:400 11px 'Inter',sans-serif;color:#8B95A8;margin-top:4px;">avg 7d: &euro;81,20 &middot; avg 30d: &euro;79,40 &middot; 14 min geleden</div>
+              </div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:9px;">
+              <div style="font:600 12px 'Inter',sans-serif;color:#8B95A8;text-transform:uppercase;letter-spacing:0.06em;">Conditie</div>
+              <div id="cond-pills" style="display:flex;gap:9px;overflow-x:auto;padding-bottom:4px;"></div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:9px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <span style="font:600 12px 'Inter',sans-serif;color:#8B95A8;text-transform:uppercase;letter-spacing:0.06em;">Gecorrigeerde prijs</span>
+                <span style="display:flex;align-items:center;gap:4px;font:500 12px 'Inter',sans-serif;color:#8B95A8;cursor:pointer;"><span class="ms" style="font-size:15px;">edit</span>aanpassen</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;background:#161B27;border:1px solid #252D3D;border-radius:13px;height:58px;padding:0 18px;">
+                <span style="font:700 24px 'Inter',sans-serif;color:#8B95A8;">&euro;</span>
+                <input id="corrected-input" value="80,28" oninput="updateCalc()" style="flex:1;background:transparent;border:none;outline:none;color:#F0F4FF;font:800 26px 'Inter',sans-serif;letter-spacing:-0.02em;min-width:0;" />
+              </div>
+            </div>
+
+            <div style="display:flex;gap:12px;">
+              <div style="flex:1;background:rgba(247,201,79,0.08);border:1px solid rgba(247,201,79,0.32);border-radius:16px;padding:15px;">
+                <div style="display:flex;align-items:center;gap:7px;color:#F7C94F;">
+                  <span class="ms" style="font-size:19px;">payments</span>
+                  <span style="font:600 13px 'Inter',sans-serif;">Cash bod</span>
+                </div>
+                <div id="cash-bid" style="font:800 27px 'Inter',sans-serif;color:#F7C94F;letter-spacing:-0.02em;margin-top:10px;">&euro; 48,17</div>
+              </div>
+              <div style="flex:1;background:rgba(0,200,150,0.08);border:1px solid rgba(0,200,150,0.32);border-radius:16px;padding:15px;">
+                <div style="display:flex;align-items:center;gap:7px;color:#00C896;">
+                  <span class="ms" style="font-size:19px;">swap_horiz</span>
+                  <span style="font:600 13px 'Inter',sans-serif;">Inruil bod</span>
+                </div>
+                <div id="inruil-bid" style="font:800 27px 'Inter',sans-serif;color:#00C896;letter-spacing:-0.02em;margin-top:10px;">&euro; 60,21</div>
+              </div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:11px;margin-top:2px;">
+              <div style="display:flex;align-items:center;justify-content:center;gap:8px;height:56px;border-radius:14px;background:#4F8EF7;color:#fff;font:700 16px 'Inter',sans-serif;box-shadow:0 0 18px rgba(79,142,247,0.35);cursor:pointer;">
+                <span class="ms" style="font-size:21px;">add</span>Toevoegen als inkoop
+              </div>
+              <div style="display:flex;align-items:center;justify-content:center;gap:8px;height:56px;border-radius:14px;background:transparent;border:1.5px solid #00C896;color:#00C896;font:700 16px 'Inter',sans-serif;cursor:pointer;">
+                <span class="ms" style="font-size:21px;">add</span>Toevoegen als inruil
+              </div>
+            </div>
+
+          </div>
+
+          <div style="display:flex;border-top:1px solid #252D3D;background:#0D1117;padding:9px 6px 16px;flex:0 0 auto;">
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:#4F8EF7;position:relative;">
+              <div style="position:absolute;top:-9px;width:26px;height:3px;border-radius:3px;background:#4F8EF7;"></div>
+              <span class="ms" style="font-size:24px;">search</span>
+              <span style="font:600 11px 'Inter',sans-serif;">Zoeken</span>
+            </div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:#8B95A8;position:relative;">
+              <div style="position:relative;">
+                <span class="ms" style="font-size:24px;">shopping_cart</span>
+                <span style="position:absolute;top:-4px;right:-9px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:#F75A5A;color:#fff;font:700 10px 'Inter',sans-serif;display:flex;align-items:center;justify-content:center;">2</span>
+              </div>
+              <span style="font:500 11px 'Inter',sans-serif;">Winkelwagen</span>
+            </div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:#454d5e;">
+              <span class="ms" style="font-size:24px;">inventory_2</span>
+              <span style="font:500 11px 'Inter',sans-serif;">Voorraad</span>
+            </div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:#8B95A8;">
+              <span class="ms" style="font-size:24px;">settings</span>
+              <span style="font:500 11px 'Inter',sans-serif;">Instellingen</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================= SCREEN 2 — WINKELWAGEN ========================= -->
+    <div style="width:404px;flex:0 0 auto;display:flex;flex-direction:column;gap:14px;">
+      <div style="display:flex;align-items:baseline;gap:9px;padding-left:8px;">
+        <span style="font:700 12px 'Roboto Mono',monospace;color:#4F8EF7;">02</span>
+        <span style="font:600 15px 'Inter',sans-serif;color:#F0F4FF;">Winkelwagen</span>
+        <span style="font:400 13px 'Inter',sans-serif;color:#8B95A8;">&middot; ruildeal</span>
+      </div>
+      <div style="height:862px;border-radius:44px;background:#05070b;border:1px solid #252D3D;padding:9px;box-shadow:0 36px 70px rgba(0,0,0,0.55);">
+        <div style="height:100%;border-radius:36px;background:#0D1117;overflow:hidden;display:flex;flex-direction:column;position:relative;">
+
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 26px 4px;font:600 14px 'Inter',sans-serif;color:#F0F4FF;flex:0 0 auto;">
+            <span>14:32</span>
+            <div style="display:flex;gap:7px;align-items:center;">
+              <span class="ms" style="font-size:17px;">signal_cellular_alt</span>
+              <span class="ms" style="font-size:17px;">wifi</span>
+              <span class="ms" style="font-size:18px;">battery_full</span>
+            </div>
+          </div>
+
+          <div style="padding:10px 22px 6px;flex:0 0 auto;">
+            <div style="font:700 22px 'Inter',sans-serif;letter-spacing:-0.02em;">Winkelwagen</div>
+          </div>
+
+          <div class="frame-scroll" style="flex:1;display:flex;flex-direction:column;padding:6px 22px 14px;">
+
+            <div style="font:600 12px 'Inter',sans-serif;color:#8B95A8;text-transform:uppercase;letter-spacing:0.06em;margin:8px 0 10px;">Klant geeft</div>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+
+              <div style="display:flex;align-items:center;gap:12px;background:#161B27;border:1px solid #252D3D;border-radius:14px;padding:12px;">
+                <div style="width:42px;height:58px;flex:0 0 auto;border-radius:7px;border:1px solid #252D3D;background:repeating-linear-gradient(135deg,#1E2435,#1E2435 5px,#232b3f 5px,#232b3f 10px);"></div>
+                <div style="flex:1;min-width:0;">
+                  <div style="font:600 15px 'Inter',sans-serif;color:#F0F4FF;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Charizard ex</div>
+                  <div style="display:inline-flex;margin-top:5px;padding:2px 9px;border-radius:11px;background:#1E2435;border:1px solid #252D3D;font:600 11px 'Roboto Mono',monospace;color:#8B95A8;">NM</div>
+                </div>
+                <div style="text-align:right;flex:0 0 auto;">
+                  <div style="font:700 15px 'Inter',sans-serif;color:#F7C94F;">&euro; 48,16</div>
+                  <div style="font:700 15px 'Inter',sans-serif;color:#00C896;margin-top:3px;">&euro; 60,21</div>
+                </div>
+              </div>
+
+              <div style="display:flex;border-radius:14px;overflow:hidden;border:1px solid #252D3D;">
+                <div style="flex:1;display:flex;align-items:center;gap:12px;background:#161B27;padding:12px;">
+                  <div style="width:42px;height:58px;flex:0 0 auto;border-radius:7px;border:1px solid #252D3D;background:repeating-linear-gradient(135deg,#1E2435,#1E2435 5px,#232b3f 5px,#232b3f 10px);"></div>
+                  <div style="flex:1;min-width:0;">
+                    <div style="font:600 15px 'Inter',sans-serif;color:#F0F4FF;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Pikachu V</div>
+                    <div style="display:inline-flex;margin-top:5px;padding:2px 9px;border-radius:11px;background:#1E2435;border:1px solid #252D3D;font:600 11px 'Roboto Mono',monospace;color:#8B95A8;">EX</div>
+                  </div>
+                  <div style="text-align:right;flex:0 0 auto;">
+                    <div style="font:700 15px 'Inter',sans-serif;color:#F7C94F;">&euro; 12,40</div>
+                    <div style="font:700 15px 'Inter',sans-serif;color:#00C896;margin-top:3px;">&euro; 15,50</div>
+                  </div>
+                </div>
+                <div style="width:62px;flex:0 0 auto;background:#F75A5A;display:flex;align-items:center;justify-content:center;color:#fff;cursor:pointer;">
+                  <span class="ms" style="font-size:24px;">delete</span>
+                </div>
+              </div>
+
+            </div>
+
+            <div style="display:flex;align-items:center;gap:12px;margin:20px 0 10px;">
+              <div style="height:1px;flex:1;background:#252D3D;"></div>
+              <span style="font:600 12px 'Inter',sans-serif;color:#8B95A8;text-transform:uppercase;letter-spacing:0.06em;">Klant krijgt</span>
+              <div style="height:1px;flex:1;background:#252D3D;"></div>
+            </div>
+
+            <div style="display:flex;align-items:center;gap:12px;background:#161B27;border:1px solid #252D3D;border-radius:14px;padding:12px;">
+              <div style="width:42px;height:58px;flex:0 0 auto;border-radius:7px;border:1px solid #252D3D;background:repeating-linear-gradient(135deg,#1E2435,#1E2435 5px,#232b3f 5px,#232b3f 10px);"></div>
+              <div style="flex:1;min-width:0;">
+                <div style="font:600 15px 'Inter',sans-serif;color:#F0F4FF;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Iono (SAR)</div>
+                <div style="display:inline-flex;margin-top:5px;padding:2px 9px;border-radius:11px;background:#1E2435;border:1px solid #252D3D;font:600 11px 'Roboto Mono',monospace;color:#8B95A8;">NM</div>
+              </div>
+              <div style="text-align:right;flex:0 0 auto;">
+                <div style="font:700 15px 'Inter',sans-serif;color:#8B95A8;">&minus; &euro; 48,06</div>
+              </div>
+            </div>
+
+          </div>
+
+          <div style="flex:0 0 auto;background:#0D1117;">
+            <div style="margin:0 16px;background:#1E2435;border:1px solid #252D3D;border-radius:18px;padding:16px 18px;">
+              <div style="display:flex;justify-content:space-between;font:500 14px 'Inter',sans-serif;color:#8B95A8;">
+                <span>Totaal inkoop</span><span style="color:#F0F4FF;font-weight:600;">&euro; 60,56</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;font:500 14px 'Inter',sans-serif;color:#8B95A8;margin-top:7px;">
+                <span>Totaal uitruil</span><span style="color:#F0F4FF;font-weight:600;">&euro; 48,06</span>
+              </div>
+              <div style="height:1px;background:#252D3D;margin:13px 0;"></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <span style="font:600 14px 'Inter',sans-serif;color:#8B95A8;">Klant betaalt bij</span>
+                <span style="font:800 30px 'Inter',sans-serif;color:#00C896;letter-spacing:-0.02em;">&euro; 12,50</span>
+              </div>
+            </div>
+            <div style="display:flex;gap:11px;padding:14px 16px 20px;">
+              <div style="flex:1;display:flex;align-items:center;justify-content:center;gap:7px;height:54px;border-radius:14px;background:#4F8EF7;color:#fff;font:700 15px 'Inter',sans-serif;box-shadow:0 0 16px rgba(79,142,247,0.32);cursor:pointer;">
+                <span class="ms" style="font-size:20px;">present_to_all</span>Toon klant
+              </div>
+              <div style="flex:1;display:flex;align-items:center;justify-content:center;gap:7px;height:54px;border-radius:14px;background:#00C896;color:#05241b;font:700 15px 'Inter',sans-serif;box-shadow:0 0 16px rgba(0,200,150,0.3);cursor:pointer;">
+                <span class="ms" style="font-size:20px;">check_circle</span>Deal sluiten
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================= SCREEN 3 — KLANTSCHERM ========================= -->
+    <div style="width:404px;flex:0 0 auto;display:flex;flex-direction:column;gap:14px;">
+      <div style="display:flex;align-items:baseline;gap:9px;padding-left:8px;">
+        <span style="font:700 12px 'Roboto Mono',monospace;color:#4F8EF7;">03</span>
+        <span style="font:600 15px 'Inter',sans-serif;color:#F0F4FF;">Klantscherm</span>
+        <span style="font:400 13px 'Inter',sans-serif;color:#8B95A8;">&middot; presentatiemodus</span>
+      </div>
+      <div style="height:862px;border-radius:44px;background:#05070b;border:1px solid #252D3D;padding:9px;box-shadow:0 36px 70px rgba(0,0,0,0.55);">
+        <div style="height:100%;border-radius:36px;background:#11161f;overflow:hidden;display:flex;flex-direction:column;position:relative;">
+
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 26px 4px;font:600 14px 'Inter',sans-serif;color:#F0F4FF;flex:0 0 auto;">
+            <span>14:32</span>
+            <div style="display:flex;gap:7px;align-items:center;">
+              <span class="ms" style="font-size:17px;">signal_cellular_alt</span>
+              <span class="ms" style="font-size:17px;">wifi</span>
+              <span class="ms" style="font-size:18px;">battery_full</span>
+            </div>
+          </div>
+
+          <div style="display:flex;align-items:center;padding:14px 22px 6px;flex:0 0 auto;">
+            <div style="width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,0.04);display:flex;align-items:center;justify-content:center;cursor:pointer;">
+              <span class="ms" style="font-size:22px;color:#8B95A8;">arrow_back</span>
+            </div>
+            <div style="flex:1;display:flex;align-items:center;justify-content:center;gap:8px;margin-left:-34px;">
+              <div style="width:8px;height:8px;background:#4F8EF7;transform:rotate(45deg);border-radius:1px;"></div>
+              <span style="font:700 16px 'Inter',sans-serif;letter-spacing:0.04em;color:#F0F4FF;">Card<span style="color:#4F8EF7;">Pit</span></span>
+            </div>
+          </div>
+
+          <div class="frame-scroll" style="flex:1;display:flex;flex-direction:column;padding:16px 24px;">
+            <div style="font:600 12px 'Inter',sans-serif;color:#8B95A8;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Jouw kaarten</div>
+
+            <div style="display:flex;align-items:center;padding:18px 0;border-bottom:1px solid #20283a;">
+              <div style="flex:1;min-width:0;">
+                <div style="font:600 19px 'Inter',sans-serif;color:#F0F4FF;">Charizard ex</div>
+                <div style="display:inline-flex;margin-top:6px;padding:3px 11px;border-radius:12px;background:rgba(255,255,255,0.05);font:600 12px 'Roboto Mono',monospace;color:#8B95A8;">NM</div>
+              </div>
+              <div style="display:flex;gap:10px;flex:0 0 auto;">
+                <div style="text-align:center;padding:9px 14px;border-radius:12px;background:rgba(247,201,79,0.1);">
+                  <div style="display:flex;align-items:center;gap:5px;color:#F7C94F;justify-content:center;"><span class="ms" style="font-size:15px;">payments</span><span style="font:500 11px 'Inter',sans-serif;">Cash</span></div>
+                  <div style="font:800 17px 'Inter',sans-serif;color:#F7C94F;margin-top:3px;">&euro; 48,16</div>
+                </div>
+                <div style="text-align:center;padding:9px 14px;border-radius:12px;background:rgba(0,200,150,0.1);">
+                  <div style="display:flex;align-items:center;gap:5px;color:#00C896;justify-content:center;"><span class="ms" style="font-size:15px;">swap_horiz</span><span style="font:500 11px 'Inter',sans-serif;">Inruil</span></div>
+                  <div style="font:800 17px 'Inter',sans-serif;color:#00C896;margin-top:3px;">&euro; 60,21</div>
+                </div>
+              </div>
+            </div>
+
+            <div style="display:flex;align-items:center;padding:18px 0;border-bottom:1px solid #20283a;">
+              <div style="flex:1;min-width:0;">
+                <div style="font:600 19px 'Inter',sans-serif;color:#F0F4FF;">Pikachu V</div>
+                <div style="display:inline-flex;margin-top:6px;padding:3px 11px;border-radius:12px;background:rgba(255,255,255,0.05);font:600 12px 'Roboto Mono',monospace;color:#8B95A8;">EX</div>
+              </div>
+              <div style="display:flex;gap:10px;flex:0 0 auto;">
+                <div style="text-align:center;padding:9px 14px;border-radius:12px;background:rgba(247,201,79,0.1);">
+                  <div style="display:flex;align-items:center;gap:5px;color:#F7C94F;justify-content:center;"><span class="ms" style="font-size:15px;">payments</span><span style="font:500 11px 'Inter',sans-serif;">Cash</span></div>
+                  <div style="font:800 17px 'Inter',sans-serif;color:#F7C94F;margin-top:3px;">&euro; 12,40</div>
+                </div>
+                <div style="text-align:center;padding:9px 14px;border-radius:12px;background:rgba(0,200,150,0.1);">
+                  <div style="display:flex;align-items:center;gap:5px;color:#00C896;justify-content:center;"><span class="ms" style="font-size:15px;">swap_horiz</span><span style="font:500 11px 'Inter',sans-serif;">Inruil</span></div>
+                  <div style="font:800 17px 'Inter',sans-serif;color:#00C896;margin-top:3px;">&euro; 15,50</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="flex:0 0 auto;padding:22px 24px 28px;background:rgba(255,255,255,0.02);border-top:1px solid #20283a;">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <div style="display:flex;align-items:center;gap:8px;color:#F7C94F;"><span class="ms" style="font-size:21px;">payments</span><span style="font:600 15px 'Inter',sans-serif;">Totaal cash</span></div>
+              <div style="font:800 32px 'Inter',sans-serif;color:#F7C94F;letter-spacing:-0.02em;">&euro; 60,56</div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px;">
+              <div style="display:flex;align-items:center;gap:8px;color:#00C896;"><span class="ms" style="font-size:21px;">swap_horiz</span><span style="font:600 15px 'Inter',sans-serif;">Totaal inruil</span></div>
+              <div style="font:800 32px 'Inter',sans-serif;color:#00C896;letter-spacing:-0.02em;">&euro; 75,71</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================= SCREEN 4 — INSTELLINGEN ========================= -->
+    <div style="width:404px;flex:0 0 auto;display:flex;flex-direction:column;gap:14px;">
+      <div style="display:flex;align-items:baseline;gap:9px;padding-left:8px;">
+        <span style="font:700 12px 'Roboto Mono',monospace;color:#4F8EF7;">04</span>
+        <span style="font:600 15px 'Inter',sans-serif;color:#F0F4FF;">Instellingen</span>
+        <span style="font:400 13px 'Inter',sans-serif;color:#8B95A8;">&middot; eenmalig instellen</span>
+      </div>
+      <div style="height:862px;border-radius:44px;background:#05070b;border:1px solid #252D3D;padding:9px;box-shadow:0 36px 70px rgba(0,0,0,0.55);">
+        <div style="height:100%;border-radius:36px;background:#0D1117;overflow:hidden;display:flex;flex-direction:column;position:relative;">
+
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 26px 4px;font:600 14px 'Inter',sans-serif;color:#F0F4FF;flex:0 0 auto;">
+            <span>14:32</span>
+            <div style="display:flex;gap:7px;align-items:center;">
+              <span class="ms" style="font-size:17px;">signal_cellular_alt</span>
+              <span class="ms" style="font-size:17px;">wifi</span>
+              <span class="ms" style="font-size:18px;">battery_full</span>
+            </div>
+          </div>
+
+          <div style="padding:10px 22px 6px;flex:0 0 auto;">
+            <div style="font:700 22px 'Inter',sans-serif;letter-spacing:-0.02em;">Instellingen</div>
+          </div>
+
+          <div class="frame-scroll" style="flex:1;display:flex;flex-direction:column;gap:22px;padding:12px 22px 18px;">
+
+            <div>
+              <div style="font:600 12px 'Inter',sans-serif;color:#8B95A8;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:14px;">Inkooppercentages</div>
+
+              <div style="background:#161B27;border:1px solid #252D3D;border-radius:16px;padding:16px;margin-bottom:11px;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:13px;">
+                  <span style="display:flex;align-items:center;gap:7px;font:600 15px 'Inter',sans-serif;color:#F0F4FF;"><span class="ms" style="font-size:18px;color:#F7C94F;">payments</span>Cash inkoop %</span>
+                  <span id="cash-pct-display" style="min-width:62px;text-align:center;padding:6px 0;border-radius:9px;background:#1E2435;border:1px solid #252D3D;font:700 16px 'Roboto Mono',monospace;color:#F7C94F;">60%</span>
+                </div>
+                <input type="range" id="cash-pct-slider" min="0" max="100" value="60" oninput="updateSettings()" style="accent-color:#F7C94F;" />
+              </div>
+
+              <div style="background:#161B27;border:1px solid #252D3D;border-radius:16px;padding:16px;margin-bottom:11px;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:13px;">
+                  <span style="display:flex;align-items:center;gap:7px;font:600 15px 'Inter',sans-serif;color:#F0F4FF;"><span class="ms" style="font-size:18px;color:#00C896;">swap_horiz</span>Inruil inkoop %</span>
+                  <span id="inruil-pct-display" style="min-width:62px;text-align:center;padding:6px 0;border-radius:9px;background:#1E2435;border:1px solid #252D3D;font:700 16px 'Roboto Mono',monospace;color:#00C896;">75%</span>
+                </div>
+                <input type="range" id="inruil-pct-slider" min="0" max="100" value="75" oninput="updateSettings()" style="accent-color:#00C896;" />
+              </div>
+
+              <div style="background:#1E2435;border:1px solid #252D3D;border-radius:12px;padding:12px 14px;font:500 13px 'Inter',sans-serif;color:#8B95A8;">
+                Bij een kaart van &euro;100: <span id="preview-cash" style="color:#F7C94F;font-weight:700;">&euro; 60,00</span> &middot; <span id="preview-inruil" style="color:#00C896;font-weight:700;">&euro; 75,00</span>
+              </div>
+            </div>
+
+            <div>
+              <div style="font:600 12px 'Inter',sans-serif;color:#8B95A8;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:14px;">Conditie-aanpassingen</div>
+              <div id="cond-adjust-table" style="background:#161B27;border:1px solid #252D3D;border-radius:16px;overflow:hidden;"></div>
+            </div>
+
+            <div style="display:flex;align-items:center;justify-content:center;gap:8px;height:56px;border-radius:14px;background:#4F8EF7;color:#fff;font:700 16px 'Inter',sans-serif;box-shadow:0 0 18px rgba(79,142,247,0.35);margin-top:2px;cursor:pointer;">
+              <span class="ms" style="font-size:21px;">save</span>Opslaan
+            </div>
+
+          </div>
+
+          <div style="display:flex;border-top:1px solid #252D3D;background:#0D1117;padding:9px 6px 16px;flex:0 0 auto;">
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:#8B95A8;">
+              <span class="ms" style="font-size:24px;">search</span><span style="font:500 11px 'Inter',sans-serif;">Zoeken</span>
+            </div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:#8B95A8;">
+              <span class="ms" style="font-size:24px;">shopping_cart</span><span style="font:500 11px 'Inter',sans-serif;">Winkelwagen</span>
+            </div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:#454d5e;">
+              <span class="ms" style="font-size:24px;">inventory_2</span><span style="font:500 11px 'Inter',sans-serif;">Voorraad</span>
+            </div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:#4F8EF7;position:relative;">
+              <div style="position:absolute;top:-9px;width:26px;height:3px;border-radius:3px;background:#4F8EF7;"></div>
+              <span class="ms" style="font-size:24px;">settings</span><span style="font:600 11px 'Inter',sans-serif;">Instellingen</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================= SCREEN 5 — LOGIN ========================= -->
+    <div style="width:404px;flex:0 0 auto;display:flex;flex-direction:column;gap:14px;">
+      <div style="display:flex;align-items:baseline;gap:9px;padding-left:8px;">
+        <span style="font:700 12px 'Roboto Mono',monospace;color:#4F8EF7;">05</span>
+        <span style="font:600 15px 'Inter',sans-serif;color:#F0F4FF;">Login</span>
+        <span style="font:400 13px 'Inter',sans-serif;color:#8B95A8;">&middot; onboarding</span>
+      </div>
+      <div style="height:862px;border-radius:44px;background:#05070b;border:1px solid #252D3D;padding:9px;box-shadow:0 36px 70px rgba(0,0,0,0.55);">
+        <div style="height:100%;border-radius:36px;background:#0D1117;overflow:hidden;display:flex;flex-direction:column;position:relative;">
+
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 26px 4px;font:600 14px 'Inter',sans-serif;color:#F0F4FF;flex:0 0 auto;">
+            <span>14:32</span>
+            <div style="display:flex;gap:7px;align-items:center;">
+              <span class="ms" style="font-size:17px;">signal_cellular_alt</span>
+              <span class="ms" style="font-size:17px;">wifi</span>
+              <span class="ms" style="font-size:18px;">battery_full</span>
+            </div>
+          </div>
+
+          <div style="flex:1;display:flex;flex-direction:column;justify-content:center;padding:28px;">
+
+            <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:38px;">
+              <div style="width:64px;height:64px;border-radius:18px;background:#161B27;border:1px solid #252D3D;display:flex;align-items:center;justify-content:center;margin-bottom:18px;box-shadow:0 0 26px rgba(79,142,247,0.18);">
+                <div style="width:26px;height:26px;background:#4F8EF7;transform:rotate(45deg);border-radius:5px;box-shadow:0 0 16px rgba(79,142,247,0.6);"></div>
+              </div>
+              <div style="font:800 34px 'Inter',sans-serif;letter-spacing:-0.03em;">Card<span style="color:#4F8EF7;">Pit</span></div>
+              <div style="font:italic 400 15px 'Inter',sans-serif;color:#8B95A8;margin-top:4px;">&ldquo;Built for the table.&rdquo;</div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:13px;">
+              <div style="display:flex;align-items:center;gap:11px;background:#161B27;border:1px solid #252D3D;border-radius:14px;height:56px;padding:0 16px;">
+                <span class="ms" style="font-size:20px;color:#8B95A8;">mail</span>
+                <input value="vendor@cardpit.eu" style="flex:1;background:transparent;border:none;outline:none;color:#F0F4FF;font:500 15px 'Inter',sans-serif;min-width:0;" />
+              </div>
+              <div style="display:flex;align-items:center;gap:11px;background:#161B27;border:1px solid #252D3D;border-radius:14px;height:56px;padding:0 16px;">
+                <span class="ms" style="font-size:20px;color:#8B95A8;">lock</span>
+                <input type="password" value="123456789" style="flex:1;background:transparent;border:none;outline:none;color:#F0F4FF;font:500 15px 'Inter',sans-serif;letter-spacing:2px;min-width:0;" />
+                <span class="ms" style="font-size:20px;color:#8B95A8;cursor:pointer;">visibility_off</span>
+              </div>
+
+              <div style="display:flex;align-items:center;justify-content:center;height:56px;border-radius:14px;background:#4F8EF7;color:#fff;font:700 16px 'Inter',sans-serif;box-shadow:0 0 20px rgba(79,142,247,0.4);margin-top:6px;cursor:pointer;">Inloggen</div>
+
+              <div style="text-align:center;font:400 14px 'Inter',sans-serif;color:#8B95A8;margin-top:8px;">Nog geen account? <span style="color:#4F8EF7;font-weight:600;cursor:pointer;">Registreer</span></div>
+            </div>
+
+          </div>
+
+          <div style="text-align:center;padding:0 24px 30px;font:400 12px 'Inter',sans-serif;color:#5b6678;flex:0 0 auto;">Voor TCG-vendors op beurzen in Europa &#127466;&#127482;</div>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const TREND = 84.5;
+  const MULT = { MT: 1.00, NM: 0.95, EX: 0.85, GD: 0.70, LP: 0.55, PL: 0.40, PO: 0.25 };
+  const CODES = ['MT', 'NM', 'EX', 'GD', 'LP', 'PL', 'PO'];
+
+  let selected = 'NM';
+  let cashPct = 60;
+  let inruilPct = 75;
+
+  function fmtNum(n) { return (Math.round(n * 100) / 100).toFixed(2).replace('.', ','); }
+  function fmt(n) { return '€ ' + fmtNum(n); }
+
+  function renderPills() {
+    const container = document.getElementById('cond-pills');
+    container.innerHTML = '';
+    CODES.forEach(c => {
+      const sel = c === selected;
+      const pill = document.createElement('div');
+      pill.textContent = c;
+      Object.assign(pill.style, {
+        minWidth: '54px', height: '50px', display: 'flex', alignItems: 'center',
+        justifyContent: 'center', borderRadius: '25px', flex: '0 0 auto', cursor: 'pointer',
+        font: "600 17px 'Roboto Mono', monospace", transition: 'all 0.12s ease',
+        background: sel ? '#4F8EF7' : '#1E2435',
+        color: sel ? '#fff' : '#8B95A8',
+        border: sel ? '1px solid #4F8EF7' : '1px solid #252D3D',
+        boxShadow: sel ? '0 0 18px rgba(79,142,247,0.5)' : 'none'
+      });
+      pill.addEventListener('click', () => {
+        selected = c;
+        const price = fmtNum(TREND * MULT[c]);
+        document.getElementById('corrected-input').value = price;
+        renderPills();
+        updateCalc();
+      });
+      container.appendChild(pill);
+    });
+  }
+
+  function renderCondTable() {
+    const table = document.getElementById('cond-adjust-table');
+    table.innerHTML = '';
+    CODES.forEach((c, i) => {
+      const row = document.createElement('div');
+      Object.assign(row.style, {
+        display: 'flex', alignItems: 'center', gap: '12px',
+        padding: '13px 15px',
+        borderTop: i === 0 ? 'none' : '1px solid #252D3D'
+      });
+      row.innerHTML = `
+        <div style="display:inline-flex;align-items:center;justify-content:center;width:46px;height:30px;border-radius:9px;background:#1E2435;border:1px solid #252D3D;font:700 13px 'Roboto Mono',monospace;color:#F0F4FF;">${c}</div>
+        <span style="flex:1;font:400 13px 'Inter',sans-serif;color:#8B95A8;">% van trendprijs</span>
+        <div style="display:flex;align-items:baseline;gap:3px;">
+          <span style="font:700 17px 'Roboto Mono',monospace;color:#F0F4FF;">${Math.round(MULT[c] * 100)}</span>
+          <span style="font:500 13px 'Inter',sans-serif;color:#8B95A8;">%</span>
+        </div>
+      `;
+      table.appendChild(row);
+    });
+  }
+
+  function updateCalc() {
+    const raw = document.getElementById('corrected-input').value;
+    const num = parseFloat(raw.replace(',', '.')) || 0;
+    document.getElementById('cash-bid').textContent = fmt(num * cashPct / 100);
+    document.getElementById('inruil-bid').textContent = fmt(num * inruilPct / 100);
+  }
+
+  function updateSettings() {
+    cashPct = parseInt(document.getElementById('cash-pct-slider').value);
+    inruilPct = parseInt(document.getElementById('inruil-pct-slider').value);
+    document.getElementById('cash-pct-display').textContent = cashPct + '%';
+    document.getElementById('inruil-pct-display').textContent = inruilPct + '%';
+    document.getElementById('preview-cash').textContent = fmt(cashPct);
+    document.getElementById('preview-inruil').textContent = fmt(inruilPct);
+    updateCalc();
+  }
+
+  renderPills();
+  renderCondTable();
+  updateCalc();
+</script>
+</body>
+</html>
