@@ -9,10 +9,15 @@ import BidDisplay from "@/components/BidDisplay";
 import {
   getCachedPriceWithAge,
   setCachedPrice,
+  getTodaySpend,
   type CachedPrice,
   type Condition,
 } from "@/lib/db";
+import { bidPercentages, roundBid } from "@/lib/bids";
 import { fmt, fmtAge, parseDutch } from "@/lib/format";
+
+const RECENT_KEY = "cardpit_recent";
+const RECENT_MAX = 8;
 
 const CACHE_TTL = 4 * 60 * 60 * 1000; // 4 hours
 
@@ -78,27 +83,38 @@ export default function ZoekenPage() {
   const [priceError, setPriceError] = useState("");
 
   // Calculation — only the vendor's manual override is state; the rest is
-  // derived during render from price × condition × settings.
+  // derived during render from price × condition × settings (incl. tiers
+  // per price range and rounding to €0,50/€1).
   const [condition, setCondition] = useState<Condition>("NM");
   const [priceOverride, setPriceOverride] = useState<string | null>(null);
+  const [qty, setQty] = useState(1);
 
   const mult = (settings.conditionMultipliers[condition] ?? 100) / 100;
   const baseCorrected = price ? price.trendPrice * mult : 0;
   const correctedInput =
     priceOverride ?? (price ? baseCorrected.toFixed(2).replace(".", ",") : "");
   const correctedNum = parseDutch(correctedInput);
-  const cashBid = (correctedNum * settings.cashPercentage) / 100;
-  const tradeBid = (correctedNum * settings.tradePercentage) / 100;
+  const pct = bidPercentages(settings, correctedNum);
+  const cashBid = roundBid((correctedNum * pct.cash) / 100, settings.rounding);
+  const tradeBid = roundBid((correctedNum * pct.trade) / 100, settings.rounding);
+
+  // Recent searches + today's buy total (float watch)
+  const [recent, setRecent] = useState<SearchResult[]>([]);
+  const [todaySpend, setTodaySpend] = useState(0);
 
   // Feedback
-  const [toast, setToast] = useState<{ text: string; tone: "ok" | "err" } | null>(null);
+  const [toast, setToast] = useState<{
+    text: string;
+    tone: "ok" | "err";
+    undoable?: boolean;
+  } | null>(null);
   const [lightbox, setLightbox] = useState(false);
 
   const searchRef = useRef<HTMLInputElement>(null);
 
-  function showToast(text: string, tone: "ok" | "err" = "ok") {
-    setToast({ text, tone });
-    setTimeout(() => setToast(null), 2500);
+  function showToast(text: string, tone: "ok" | "err" = "ok", undoable = false) {
+    setToast({ text, tone, undoable });
+    setTimeout(() => setToast(null), undoable ? 4200 : 2500);
   }
 
   // Restore last session on mount (state applied in a microtask callback)
@@ -127,6 +143,28 @@ export default function ZoekenPage() {
   // Auto-focus search on mount
   useEffect(() => {
     searchRef.current?.focus();
+  }, []);
+
+  // Load recent searches + today's buy total on mount
+  useEffect(() => {
+    let live = true;
+    Promise.resolve().then(() => {
+      if (!live) return;
+      try {
+        const raw = localStorage.getItem(RECENT_KEY);
+        if (raw) setRecent(JSON.parse(raw));
+      } catch {
+        // corrupt storage — ignore
+      }
+    });
+    getTodaySpend()
+      .then((v) => {
+        if (live) setTodaySpend(v);
+      })
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
   }, []);
 
   // Debounced search
@@ -191,7 +229,19 @@ export default function ZoekenPage() {
     setPriceError("");
     setPriceOverride(null);
     setLightbox(false);
+    setQty(1);
     setIsFetchingPrice(true);
+
+    // Remember for the "recent gezocht" strip (MRU, max 8)
+    setRecent((prev) => {
+      const next = [card, ...prev.filter((c) => c.id !== card.id)].slice(0, RECENT_MAX);
+      try {
+        localStorage.setItem(RECENT_KEY, JSON.stringify(next));
+      } catch {
+        // quota / private mode — ignore
+      }
+      return next;
+    });
 
     // 1. Check IndexedDB cache first
     try {
@@ -328,15 +378,18 @@ export default function ZoekenPage() {
       cardImageUrl: isSlab ? "" : selected!.imageUrl,
       condition: isSlab ? "MT" : condition,
       type,
+      quantity: qty,
       correctedPrice: correctedNum,
       cashBid,
       tradeBid,
     });
     showToast(
       tr("added_as", {
-        name,
+        name: qty > 1 ? `${qty}× ${name}` : name,
         type: tr(type === "inkoop" ? "type_buy" : "type_trade"),
-      })
+      }),
+      "ok",
+      true
     );
 
     // Reset for next card
@@ -346,8 +399,14 @@ export default function ZoekenPage() {
     setQuery("");
     setPriceOverride(null);
     setCondition("NM");
+    setQty(1);
     try { sessionStorage.removeItem("cardpit_last"); } catch { /* ignore */ }
     searchRef.current?.focus();
+  }
+
+  async function undoLast() {
+    await cart.undo();
+    showToast(tr("undone"));
   }
 
   return (
@@ -362,11 +421,20 @@ export default function ZoekenPage() {
             Card<span className="text-gold">Pit</span>
           </span>
         </div>
-        {settings.eventTag ? (
-          <span className="text-[12px] font-semibold text-content-dim bg-surface-raised border border-edge rounded-full px-3 py-1.5 max-w-[150px] truncate">
-            {settings.eventTag}
-          </span>
-        ) : null}
+        <div className="flex items-center gap-2 min-w-0">
+          {/* Float watch — what went out on buys today */}
+          {todaySpend > 0 && (
+            <span className="flex items-center gap-1.5 text-[12px] font-semibold text-gold-bright bg-gold/10 border border-gold/30 rounded-full px-3 py-1.5 whitespace-nowrap">
+              <span className="ms ms-fill text-[14px]">payments</span>
+              {tr("float_today", { amount: fmt(todaySpend) })}
+            </span>
+          )}
+          {settings.eventTag ? (
+            <span className="text-[12px] font-semibold text-content-dim bg-surface-raised border border-edge rounded-full px-3 py-1.5 max-w-[130px] truncate">
+              {settings.eventTag}
+            </span>
+          ) : null}
+        </div>
       </div>
 
       {/* Search bar — z-30 so the results dropdown always paints above the
@@ -728,6 +796,38 @@ export default function ZoekenPage() {
           {/* Bids */}
           <BidDisplay cashBid={cashBid} tradeBid={tradeBid} />
 
+          {/* Quantity — bulk buys of the same card */}
+          <div className="flex items-center justify-between">
+            <span className="text-[12px] font-bold text-content-dim uppercase tracking-[0.08em]">
+              {tr("quantity")}
+            </span>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 ticket border border-edge rounded-2xl px-1.5 h-12">
+                <button
+                  onClick={() => setQty((q) => Math.max(1, q - 1))}
+                  className="press w-9 h-9 rounded-xl bg-surface-card border border-edge flex items-center justify-center text-content-dim"
+                >
+                  <span className="ms text-[18px]">remove</span>
+                </button>
+                <span className="font-mono font-bold text-[17px] text-content w-9 text-center tabular-nums">
+                  {qty}
+                </span>
+                <button
+                  onClick={() => setQty((q) => q + 1)}
+                  className="press w-9 h-9 rounded-xl bg-surface-card border border-edge flex items-center justify-center text-content-dim"
+                >
+                  <span className="ms text-[18px]">add</span>
+                </button>
+              </div>
+              <button
+                onClick={() => setQty((q) => q + 5)}
+                className="press h-12 px-3.5 rounded-2xl ticket border border-edge font-mono font-bold text-[13px] text-content-dim"
+              >
+                +5
+              </button>
+            </div>
+          </div>
+
           {/* Action buttons */}
           <div className="flex flex-col gap-3 mt-0.5">
             <button
@@ -737,6 +837,7 @@ export default function ZoekenPage() {
             >
               <span className="ms text-[21px]">add</span>
               {tr("add_as_buy")}
+              {qty > 1 ? ` ×${qty}` : ""}
             </button>
             <button
               onClick={() => addToCart("inruil")}
@@ -745,7 +846,43 @@ export default function ZoekenPage() {
             >
               <span className="ms text-[21px]">swap_horiz</span>
               {tr("add_as_trade")}
+              {qty > 1 ? ` ×${qty}` : ""}
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Recent searches — one tap back to a card you keep buying */}
+      {!selected && !slab && recent.length > 0 && (
+        <div className="flex flex-col gap-2 animate-rise">
+          <span className="text-[12px] font-bold text-content-dim uppercase tracking-[0.08em] px-1">
+            {tr("recent_searched")}
+          </span>
+          <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-5 px-5">
+            {recent.map((card) => (
+              <button
+                key={card.id}
+                onClick={() => selectCard(card)}
+                className="press flex items-center gap-2 flex-none ticket border border-edge rounded-full pl-1.5 pr-3.5 h-11"
+              >
+                {card.imageUrl ? (
+                  <Image
+                    src={card.imageUrl}
+                    alt={card.name}
+                    width={28}
+                    height={38}
+                    className="rounded-md object-contain h-8 w-auto"
+                  />
+                ) : (
+                  <span className="ms text-[16px] text-content-faint w-7 text-center">
+                    style
+                  </span>
+                )}
+                <span className="text-[13px] font-semibold text-content whitespace-nowrap max-w-[140px] truncate">
+                  {card.name}
+                </span>
+              </button>
+            ))}
           </div>
         </div>
       )}
@@ -793,13 +930,22 @@ export default function ZoekenPage() {
         </div>
       )}
 
-      {/* Toast */}
+      {/* Toast — with inline undo after cart mutations */}
       {toast && (
-        <div className="fixed bottom-24 left-1/2 bg-surface-raised border border-edge-bright rounded-2xl px-5 py-3 text-[14px] font-semibold text-content shadow-[0_12px_32px_rgba(0,0,0,0.6)] z-50 whitespace-nowrap animate-toast">
-          <span className={`ms ms-fill text-[16px] mr-2 align-[-2px] ${toast.tone === "ok" ? "text-trade" : "text-danger"}`}>
+        <div className="fixed bottom-24 left-1/2 flex items-center bg-surface-raised border border-edge-bright rounded-2xl pl-4 pr-3 py-3 text-[14px] font-semibold text-content shadow-[0_12px_32px_rgba(0,0,0,0.6)] z-50 whitespace-nowrap animate-toast max-w-[calc(100vw-40px)]">
+          <span className={`ms ms-fill text-[16px] mr-2 flex-none ${toast.tone === "ok" ? "text-trade" : "text-danger"}`}>
             {toast.tone === "ok" ? "check_circle" : "error"}
           </span>
-          {toast.text}
+          <span className="truncate">{toast.text}</span>
+          {toast.undoable && cart.canUndo && (
+            <button
+              onClick={undoLast}
+              className="press ml-3 flex-none flex items-center gap-1 h-8 px-3 rounded-xl bg-gold/12 border border-gold/40 text-gold-bright text-[13px] font-bold"
+            >
+              <span className="ms text-[15px]">undo</span>
+              {tr("undo")}
+            </button>
+          )}
         </div>
       )}
     </div>

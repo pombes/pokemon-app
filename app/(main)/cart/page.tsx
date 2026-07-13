@@ -27,7 +27,7 @@ const PAYMENT_OPTIONS: { value: PaymentMethod; labelKey: TKey; icon: string }[] 
 ];
 
 export default function WinkelwagenPage() {
-  const { items, remove, clear, loading } = useCart();
+  const { items, remove, updateQty, undo, canUndo, clear, loading } = useCart();
   const { settings } = useSettings();
   const { tr } = useT();
   const router = useRouter();
@@ -36,12 +36,19 @@ export default function WinkelwagenPage() {
   const [payment, setPayment] = useState<PaymentMethod>("cash");
   const [closing, setClosing] = useState(false);
   const [dealDone, setDealDone] = useState(false);
+  const [toast, setToast] = useState<{ text: string; undoable: boolean } | null>(null);
+
+  function showToast(text: string, undoable = false) {
+    setToast({ text, undoable });
+    setTimeout(() => setToast(null), undoable ? 4200 : 2500);
+  }
 
   const inkoop = items.filter((i) => i.type === "inkoop");
   const inruil = items.filter((i) => i.type === "inruil");
 
-  const totalCash = inkoop.reduce((s, i) => s + i.cashBid, 0);
-  const totalTrade = inruil.reduce((s, i) => s + i.tradeBid, 0);
+  const totalCards = items.reduce((s, i) => s + i.quantity, 0);
+  const totalCash = inkoop.reduce((s, i) => s + i.cashBid * i.quantity, 0);
+  const totalTrade = inruil.reduce((s, i) => s + i.tradeBid * i.quantity, 0);
   const hasItems = items.length > 0;
 
   // Effective purchase price per inkoop item depends on how the deal is paid
@@ -51,8 +58,19 @@ export default function WinkelwagenPage() {
     return isTradeDeal ? item.tradeBid : item.cashBid;
   }
 
-  const totalInkoop = inkoop.reduce((s, i) => s + priceForInkoop(i), 0);
+  const totalInkoop = inkoop.reduce((s, i) => s + priceForInkoop(i) * i.quantity, 0);
   const saldo = totalInkoop - totalTrade; // >0: vendor pays out, <0: customer pays
+
+  async function handleRemove(id: string) {
+    const item = items.find((i) => i.id === id);
+    await remove(id);
+    showToast(tr("removed_from_deal", { name: item?.cardName ?? "" }), true);
+  }
+
+  async function undoLast() {
+    await undo();
+    showToast(tr("undone"));
+  }
 
   async function confirmDeal() {
     if (closing) return;
@@ -70,7 +88,7 @@ export default function WinkelwagenPage() {
           cardSet: item.cardSet,
           cardImageUrl: item.cardImageUrl,
           condition: item.condition,
-          quantity: 1,
+          quantity: item.quantity,
           purchasePrice: paid,
           marketPriceAtPurchase: item.correctedPrice,
           purchasedAt: now,
@@ -82,7 +100,7 @@ export default function WinkelwagenPage() {
           cardName: item.cardName,
           cardSet: item.cardSet,
           condition: item.condition,
-          quantity: 1,
+          quantity: item.quantity,
           marketPriceAtTime: item.correctedPrice,
           purchasePrice: paid,
           sellPrice: 0,
@@ -108,7 +126,7 @@ export default function WinkelwagenPage() {
           cardName: item.cardName,
           cardSet: item.cardSet,
           condition: item.condition,
-          quantity: 1,
+          quantity: item.quantity,
           marketPriceAtTime: item.correctedPrice,
           purchasePrice: match?.purchasePrice ?? 0,
           sellPrice: item.tradeBid,
@@ -118,8 +136,8 @@ export default function WinkelwagenPage() {
           notes: "",
         });
         if (match) {
-          await decrementInventory(match.id, 1);
-          match.quantity -= 1;
+          await decrementInventory(match.id, item.quantity);
+          match.quantity -= item.quantity;
         }
       }
 
@@ -171,9 +189,9 @@ export default function WinkelwagenPage() {
           </h1>
           {hasItems && (
             <span className="text-[13px] font-semibold text-content-dim bg-surface-raised border border-edge rounded-full px-3 py-1">
-              {items.length === 1
+              {totalCards === 1
                 ? tr("card_count_one")
-                : tr("cards_count", { n: items.length })}
+                : tr("cards_count", { n: totalCards })}
             </span>
           )}
         </div>
@@ -206,7 +224,8 @@ export default function WinkelwagenPage() {
             tone="gold"
             items={inkoop}
             amount={(i) => i.cashBid}
-            onRemove={remove}
+            onRemove={handleRemove}
+            onQty={updateQty}
             totalLabel={tr("total_cash")}
             total={totalCash}
           />
@@ -220,7 +239,8 @@ export default function WinkelwagenPage() {
             tone="trade"
             items={inruil}
             amount={(i) => i.tradeBid}
-            onRemove={remove}
+            onRemove={handleRemove}
+            onQty={updateQty}
             totalLabel={tr("total_trade")}
             total={totalTrade}
           />
@@ -316,7 +336,9 @@ export default function WinkelwagenPage() {
             {inkoop.length > 0 && (
               <div className="flex justify-between">
                 <span className="text-content-dim">
-                  {tr("n_buy_to_stock", { n: inkoop.length })}
+                  {tr("n_buy_to_stock", {
+                    n: inkoop.reduce((s, i) => s + i.quantity, 0),
+                  })}
                 </span>
                 <span className="font-mono font-bold text-gold-bright tabular-nums">
                   {fmt(totalInkoop)}
@@ -326,7 +348,9 @@ export default function WinkelwagenPage() {
             {inruil.length > 0 && (
               <div className="flex justify-between">
                 <span className="text-content-dim">
-                  {tr("n_trade_to_customer", { n: inruil.length })}
+                  {tr("n_trade_to_customer", {
+                    n: inruil.reduce((s, i) => s + i.quantity, 0),
+                  })}
                 </span>
                 <span className="font-mono font-bold text-trade tabular-nums">
                   {fmt(totalTrade)}
@@ -353,6 +377,23 @@ export default function WinkelwagenPage() {
           </button>
         </div>
       </Sheet>
+
+      {/* Toast — with inline undo after remove */}
+      {toast && (
+        <div className="fixed bottom-24 left-1/2 flex items-center bg-surface-raised border border-edge-bright rounded-2xl pl-4 pr-3 py-3 text-[14px] font-semibold text-content shadow-[0_12px_32px_rgba(0,0,0,0.6)] z-50 whitespace-nowrap animate-toast max-w-[calc(100vw-40px)]">
+          <span className="ms ms-fill text-[16px] text-trade mr-2 flex-none">check_circle</span>
+          <span className="truncate">{toast.text}</span>
+          {toast.undoable && canUndo && (
+            <button
+              onClick={undoLast}
+              className="press ml-3 flex-none flex items-center gap-1 h-8 px-3 rounded-xl bg-gold/12 border border-gold/40 text-gold-bright text-[13px] font-bold"
+            >
+              <span className="ms text-[15px]">undo</span>
+              {tr("undo")}
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -366,6 +407,7 @@ function CartSection({
   items,
   amount,
   onRemove,
+  onQty,
   totalLabel,
   total,
 }: {
@@ -375,6 +417,7 @@ function CartSection({
   items: CartItem[];
   amount: (item: CartItem) => number;
   onRemove: (id: string) => void;
+  onQty: (id: string, delta: number) => void;
   totalLabel: string;
   total: number;
 }) {
@@ -395,7 +438,7 @@ function CartSection({
             key={item.id}
             className="flex items-center gap-3 ticket border border-edge rounded-2xl p-3 animate-rise"
           >
-            <div className="w-10 h-14 flex-none rounded-lg border border-edge bg-surface-card overflow-hidden flex items-center justify-center">
+            <div className="w-10 h-14 flex-none rounded-lg border border-edge bg-surface-card overflow-hidden flex items-center justify-center relative">
               {item.cardImageUrl ? (
                 <Image
                   src={item.cardImageUrl}
@@ -406,6 +449,11 @@ function CartSection({
                 />
               ) : (
                 <span className="ms text-[16px] text-content-ghost">style</span>
+              )}
+              {item.quantity > 1 && (
+                <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-gold text-base text-[10px] font-extrabold flex items-center justify-center">
+                  {item.quantity}
+                </span>
               )}
             </div>
 
@@ -419,18 +467,37 @@ function CartSection({
                 </span>
                 <span className="truncate">{item.cardSet}</span>
               </div>
+              {item.quantity > 1 && (
+                <div className="text-[11px] text-content-faint font-mono mt-1 tabular-nums">
+                  {item.quantity} × {fmt(amount(item))}
+                </div>
+              )}
             </div>
 
-            <div className="flex flex-col items-end gap-1 flex-none">
+            <div className="flex flex-col items-end gap-1.5 flex-none">
               <span className={`font-mono font-bold text-[16px] tabular-nums ${toneBright}`}>
-                {fmt(amount(item))}
+                {fmt(amount(item) * item.quantity)}
               </span>
-              <button
-                onClick={() => onRemove(item.id)}
-                className="text-content-ghost active:text-danger transition-colors"
-              >
-                <span className="ms text-[20px]">delete</span>
-              </button>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => onQty(item.id, -1)}
+                  className="press w-7 h-7 rounded-lg bg-surface-card border border-edge flex items-center justify-center text-content-dim"
+                >
+                  <span className="ms text-[15px]">remove</span>
+                </button>
+                <button
+                  onClick={() => onQty(item.id, 1)}
+                  className="press w-7 h-7 rounded-lg bg-surface-card border border-edge flex items-center justify-center text-content-dim"
+                >
+                  <span className="ms text-[15px]">add</span>
+                </button>
+                <button
+                  onClick={() => onRemove(item.id)}
+                  className="press w-7 h-7 rounded-lg flex items-center justify-center text-content-ghost active:text-danger transition-colors"
+                >
+                  <span className="ms text-[18px]">delete</span>
+                </button>
+              </div>
             </div>
           </div>
         ))}

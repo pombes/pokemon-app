@@ -26,9 +26,10 @@ export type CartItem = {
   cardImageUrl: string;
   condition: Condition;
   type: "inkoop" | "inruil";
+  quantity: number;         // same card × N (bulk buys)
   correctedPrice: number;   // trend × condition% (vendor can override)
-  cashBid: number;          // correctedPrice × cashPercentage / 100
-  tradeBid: number;         // correctedPrice × tradePercentage / 100
+  cashBid: number;          // correctedPrice × cashPercentage / 100, per stuk
+  tradeBid: number;         // correctedPrice × tradePercentage / 100, per stuk
   addedAt: number;          // Date.now()
 };
 
@@ -73,12 +74,21 @@ export type ConditionMultipliers = {
   PO: number;
 };
 
+/** Above `from` euro these percentages replace the base percentages. */
+export type BidTier = {
+  from: number;
+  cashPct: number;
+  tradePct: number;
+};
+
 export type VendorSettings = {
   cashPercentage: number;       // default 60
   tradePercentage: number;      // default 75
   conditionMultipliers: ConditionMultipliers;
   eventTag?: string;            // current beurs, stamped on transactions
   language?: Lang;              // UI language, default "nl"
+  rounding?: number;            // round bids to 0 (off) / 0.5 / 1 euro
+  bidTiers?: BidTier[];         // price-range percentage overrides
 };
 
 export type CachedPrice = {
@@ -151,7 +161,9 @@ export function getDB(): Promise<IDBPDatabase<CardPitDB>> {
 // ─── Cart helpers ─────────────────────────────────────────────────────────────
 
 export async function getCartItems(): Promise<CartItem[]> {
-  return (await getDB()).getAll("cart");
+  const items = await (await getDB()).getAll("cart");
+  // Rows written before quantity existed default to 1
+  return items.map((i) => ({ ...i, quantity: i.quantity ?? 1 }));
 }
 
 export async function addCartItem(item: CartItem): Promise<void> {
@@ -182,6 +194,8 @@ export const DEFAULT_SETTINGS: VendorSettings = {
   },
   eventTag: "",
   language: "nl",
+  rounding: 0,
+  bidTiers: [],
 };
 
 export async function getSettings(): Promise<VendorSettings> {
@@ -291,4 +305,14 @@ export async function addTransaction(
 
 export async function removeTransaction(id: string): Promise<void> {
   await (await getDB()).delete("transactions", id);
+}
+
+/** Total spent on buys today — the vendor's running "float" counter. */
+export async function getTodaySpend(): Promise<number> {
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  const txs = await getTransactions();
+  return txs
+    .filter((t) => t.type === "buy" && t.createdAt >= start.getTime())
+    .reduce((s, t) => s + t.purchasePrice * t.quantity, 0);
 }

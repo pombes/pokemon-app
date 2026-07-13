@@ -54,6 +54,14 @@ const nl = {
   searching_ebay: "eBay doorzoeken…",
   slab_wrong: "Niet de juiste kaart? Zoek dan gewoon handmatig hierboven.",
 
+  // Snelheid & correctie
+  recent_searched: "Recent gezocht",
+  quantity: "Aantal",
+  undo: "Ongedaan maken",
+  undone: "Teruggedraaid",
+  removed_from_deal: "{name} verwijderd",
+  float_today: "{amount} inkoop vandaag",
+
   // Bids
   cash_bid: "Cash bod",
   trade_bid: "Inruil bod",
@@ -147,6 +155,13 @@ const nl = {
   preview_100: "Bij een kaart van €100:",
   condition_adjustments: "Conditie-aanpassingen",
   pct_of_trend: "% van trendprijs",
+  rounding: "Biedingen afronden",
+  rounding_none: "Niet",
+  rounding_help: "Cash- en inruilbiedingen worden afgerond op dit bedrag",
+  bid_tiers: "Bied-tiers per prijsklasse",
+  tiers_help: "Vanaf het drempelbedrag gelden deze percentages in plaats van de basis",
+  tier_from: "Vanaf",
+  add_tier: "Tier toevoegen",
   save: "Opslaan",
   saved: "Opgeslagen!",
 
@@ -209,6 +224,13 @@ const en: Record<TKey, string> = {
   ebay_demo: "Demo — sample data",
   searching_ebay: "Searching eBay…",
   slab_wrong: "Not the right card? Just search manually above.",
+
+  recent_searched: "Recent searches",
+  quantity: "Quantity",
+  undo: "Undo",
+  undone: "Undone",
+  removed_from_deal: "{name} removed",
+  float_today: "{amount} spent today",
 
   cash_bid: "Cash offer",
   trade_bid: "Trade offer",
@@ -298,6 +320,13 @@ const en: Record<TKey, string> = {
   preview_100: "For a €100 card:",
   condition_adjustments: "Condition adjustments",
   pct_of_trend: "% of trend price",
+  rounding: "Round bids",
+  rounding_none: "Off",
+  rounding_help: "Cash and trade bids are rounded to this step",
+  bid_tiers: "Bid tiers by price range",
+  tiers_help: "From the threshold these percentages replace the base ones",
+  tier_from: "From",
+  add_tier: "Add tier",
   save: "Save",
   saved: "Saved!",
 

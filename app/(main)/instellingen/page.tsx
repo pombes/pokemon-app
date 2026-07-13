@@ -5,9 +5,11 @@ import Link from "next/link";
 import { useSettings } from "@/hooks/useSettings";
 import { fmt } from "@/lib/format";
 import { t, LANGUAGES, type Lang, type TKey } from "@/lib/i18n";
-import type { Condition, VendorSettings } from "@/lib/db";
+import type { BidTier, Condition, VendorSettings } from "@/lib/db";
 
 const CONDITIONS: Condition[] = ["MT", "NM", "EX", "GD", "LP", "PL", "PO"];
+
+const ROUNDING_OPTIONS = [0, 0.5, 1];
 
 export default function InstellingenPage() {
   const { settings, loading, save } = useSettings();
@@ -37,6 +39,8 @@ function SettingsForm({
   const [multipliers, setMultipliers] = useState({ ...initial.conditionMultipliers });
   const [eventTag, setEventTag] = useState(initial.eventTag ?? "");
   const [language, setLanguage] = useState<Lang>(initial.language ?? "nl");
+  const [rounding, setRounding] = useState(initial.rounding ?? 0);
+  const [tiers, setTiers] = useState<BidTier[]>(initial.bidTiers ?? []);
   const [saved, setSaved] = useState(false);
 
   // Preview the chosen language immediately on this screen; the rest of the
@@ -51,6 +55,8 @@ function SettingsForm({
       conditionMultipliers: multipliers,
       eventTag: eventTag.trim(),
       language,
+      rounding,
+      bidTiers: tiers.filter((t) => t.from > 0).sort((a, b) => a.from - b.from),
     });
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
@@ -58,6 +64,10 @@ function SettingsForm({
 
   function setMult(c: Condition, val: number) {
     setMultipliers((prev) => ({ ...prev, [c]: val }));
+  }
+
+  function setTier(index: number, patch: Partial<BidTier>) {
+    setTiers((prev) => prev.map((t, i) => (i === index ? { ...t, ...patch } : t)));
   }
 
   return (
@@ -177,6 +187,100 @@ function SettingsForm({
             {tr("pay_trade")} = {fmt(tradePct)}
           </span>
         </div>
+      </section>
+
+      {/* Afronden */}
+      <section className="flex flex-col gap-3">
+        <h2 className="text-[12px] font-bold text-content-dim uppercase tracking-[0.08em]">
+          {tr("rounding")}
+        </h2>
+        <div className="flex gap-2">
+          {ROUNDING_OPTIONS.map((step) => {
+            const active = rounding === step;
+            return (
+              <button
+                key={step}
+                onClick={() => setRounding(step)}
+                className={`press flex-1 h-12 rounded-2xl border font-bold text-[14px] font-mono tabular-nums transition-colors ${
+                  active
+                    ? "bg-gold/12 border-gold/60 text-gold-bright"
+                    : "ticket border-edge text-content-dim"
+                }`}
+              >
+                {step === 0 ? tr("rounding_none") : fmt(step)}
+              </button>
+            );
+          })}
+        </div>
+        <p className="text-[12px] text-content-faint px-1 -mt-1">{tr("rounding_help")}</p>
+      </section>
+
+      {/* Bied-tiers */}
+      <section className="flex flex-col gap-3">
+        <h2 className="text-[12px] font-bold text-content-dim uppercase tracking-[0.08em]">
+          {tr("bid_tiers")}
+        </h2>
+        {tiers.length > 0 && (
+          <div className="ticket border border-edge rounded-2xl overflow-hidden">
+            {tiers.map((tier, i) => (
+              <div
+                key={i}
+                className={`flex items-center gap-2 px-3.5 py-3 ${
+                  i > 0 ? "border-t border-edge" : ""
+                }`}
+              >
+                <span className="text-[12px] text-content-dim flex-none">
+                  {tr("tier_from")} €
+                </span>
+                <input
+                  type="number"
+                  min={0}
+                  value={tier.from}
+                  onChange={(e) => setTier(i, { from: Number(e.target.value) })}
+                  className="w-14 bg-surface-card border border-edge rounded-lg text-right px-2 py-1 font-mono font-bold text-[15px] text-content outline-none focus:border-gold/60 tabular-nums"
+                />
+                <span className="ms text-[16px] text-gold flex-none ml-1">payments</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={tier.cashPct}
+                  onChange={(e) => setTier(i, { cashPct: Number(e.target.value) })}
+                  className="w-12 bg-surface-card border border-edge rounded-lg text-right px-1.5 py-1 font-mono font-bold text-[15px] text-gold-bright outline-none focus:border-gold/60 tabular-nums"
+                />
+                <span className="ms text-[16px] text-trade flex-none">swap_horiz</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={tier.tradePct}
+                  onChange={(e) => setTier(i, { tradePct: Number(e.target.value) })}
+                  className="w-12 bg-surface-card border border-edge rounded-lg text-right px-1.5 py-1 font-mono font-bold text-[15px] text-trade outline-none focus:border-gold/60 tabular-nums"
+                />
+                <span className="text-[12px] text-content-dim flex-none">%</span>
+                <button
+                  onClick={() => setTiers((prev) => prev.filter((_, j) => j !== i))}
+                  className="press w-8 h-8 flex-none rounded-lg flex items-center justify-center text-content-ghost active:text-danger ml-auto"
+                >
+                  <span className="ms text-[18px]">delete</span>
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        <button
+          onClick={() =>
+            setTiers((prev) => [
+              ...prev,
+              { from: 50, cashPct: cashPct, tradePct: tradePct },
+            ])
+          }
+          className="press flex items-center justify-center gap-2 h-12 rounded-2xl border border-dashed border-edge-bright text-content-dim font-bold text-[14px]"
+        >
+          <span className="ms text-[19px]">add</span>
+          {tr("add_tier")}
+        </button>
+        <p className="text-[12px] text-content-faint px-1 -mt-1">{tr("tiers_help")}</p>
       </section>
 
       {/* Conditie-aanpassingen */}

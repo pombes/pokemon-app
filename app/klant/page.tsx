@@ -13,8 +13,8 @@ export default function KlantPage() {
   const inkoop = items.filter((i) => i.type === "inkoop");
   const inruil = items.filter((i) => i.type === "inruil");
 
-  const totalCash = inkoop.reduce((s, i) => s + i.cashBid, 0);
-  const totalTrade = inruil.reduce((s, i) => s + i.tradeBid, 0);
+  const totalCash = inkoop.reduce((s, i) => s + i.cashBid * i.quantity, 0);
+  const totalTrade = inruil.reduce((s, i) => s + i.tradeBid * i.quantity, 0);
 
   if (loading) {
     return (
@@ -86,7 +86,13 @@ export default function KlantPage() {
 
             <div className="ticket border border-edge rounded-[20px] overflow-hidden">
               {inkoop.map((item, i) => (
-                <KlantRow key={item.id} item={item} amount={item.cashBid} tone="gold" divider={i > 0} />
+                <KlantRow
+                  key={item.id}
+                  item={item}
+                  amount={item.cashBid * item.quantity}
+                  tone="gold"
+                  divider={i > 0}
+                />
               ))}
             </div>
 
@@ -113,7 +119,13 @@ export default function KlantPage() {
 
             <div className="ticket border border-edge rounded-[20px] overflow-hidden">
               {inruil.map((item, i) => (
-                <KlantRow key={item.id} item={item} amount={item.tradeBid} tone="trade" divider={i > 0} />
+                <KlantRow
+                  key={item.id}
+                  item={item}
+                  amount={item.tradeBid * item.quantity}
+                  tone="trade"
+                  divider={i > 0}
+                />
               ))}
             </div>
 
@@ -149,7 +161,12 @@ function KlantRow({
   tone,
   divider,
 }: {
-  item: { cardImageUrl: string; cardName: string; condition: string };
+  item: {
+    cardImageUrl: string;
+    cardName: string;
+    condition: string;
+    quantity: number;
+  };
   amount: number;
   tone: "gold" | "trade";
   divider: boolean;
@@ -172,6 +189,7 @@ function KlantRow({
 
       <div className="flex-1 min-w-0">
         <div className="font-bold text-[16px] text-content truncate">
+          {item.quantity > 1 ? `${item.quantity}× ` : ""}
           {item.cardName}
         </div>
         <span className="font-mono text-[11px] font-bold text-content-dim bg-surface-card border border-edge rounded-md px-1.5 py-0.5 inline-block mt-1">
