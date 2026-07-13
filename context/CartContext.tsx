@@ -13,7 +13,11 @@ import {
   addCartItem,
   removeCartItem,
   clearCart,
+  getParkedDeals,
+  addParkedDeal,
+  removeParkedDeal,
   type CartItem,
+  type ParkedDeal,
 } from "@/lib/db";
 
 type CartInput = Omit<CartItem, "id" | "addedAt">;
@@ -28,11 +32,15 @@ type CartContextType = {
   items: CartItem[];
   loading: boolean;
   canUndo: boolean;
+  parked: ParkedDeal[];
   add: (item: CartInput) => Promise<void>;
   remove: (id: string) => Promise<void>;
   updateQty: (id: string, delta: number) => Promise<void>;
   undo: () => Promise<void>;
   clear: () => Promise<void>;
+  park: () => Promise<void>;
+  resume: (id: string) => Promise<void>;
+  discardParked: (id: string) => Promise<void>;
 };
 
 const CartContext = createContext<CartContextType | null>(null);
@@ -41,11 +49,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastAction, setLastAction] = useState<LastAction | null>(null);
+  const [parked, setParked] = useState<ParkedDeal[]>([]);
 
   useEffect(() => {
     getCartItems()
       .then(setItems)
       .finally(() => setLoading(false));
+    getParkedDeals().then(setParked).catch(() => {});
   }, []);
 
   const add = useCallback(
@@ -144,17 +154,56 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setLastAction(null);
   }, []);
 
+  /** Park the whole cart: customer walks away, next customer steps up. */
+  const park = useCallback(async () => {
+    if (items.length === 0) return;
+    const deal: ParkedDeal = {
+      id: crypto.randomUUID(),
+      items,
+      createdAt: Date.now(),
+    };
+    await addParkedDeal(deal);
+    await clearCart();
+    setItems([]);
+    setParked((prev) => [deal, ...prev]);
+    setLastAction(null);
+  }, [items]);
+
+  /** Bring a parked deal back into the cart (added to whatever is there). */
+  const resume = useCallback(async (id: string) => {
+    const deal = (await getParkedDeals()).find((d) => d.id === id);
+    if (!deal) return;
+    for (const item of deal.items) {
+      await addCartItem(item);
+    }
+    await removeParkedDeal(id);
+    setItems((prev) => {
+      const existing = new Set(prev.map((i) => i.id));
+      return [...prev, ...deal.items.filter((i) => !existing.has(i.id))];
+    });
+    setParked((prev) => prev.filter((d) => d.id !== id));
+  }, []);
+
+  const discardParked = useCallback(async (id: string) => {
+    await removeParkedDeal(id);
+    setParked((prev) => prev.filter((d) => d.id !== id));
+  }, []);
+
   return (
     <CartContext.Provider
       value={{
         items,
         loading,
         canUndo: lastAction !== null,
+        parked,
         add,
         remove,
         updateQty,
         undo,
         clear,
+        park,
+        resume,
+        discardParked,
       }}
     >
       {children}

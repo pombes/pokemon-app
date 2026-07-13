@@ -62,6 +62,19 @@ const nl = {
   removed_from_deal: "{name} verwijderd",
   float_today: "{amount} inkoop vandaag",
 
+  // Handmatige invoer (kaart niet in API)
+  no_results_for: "Niets gevonden voor “{q}”",
+  enter_manually: "Handmatig invoeren",
+  manual_price_hint: "Geen API-prijs voor deze kaart — vul hieronder zelf de prijs in en ga gewoon door.",
+
+  // Deal pauzeren
+  park_deal: "Pauzeer",
+  deal_parked: "Deal gepauzeerd",
+  parked_deals: "Gepauzeerde deals",
+  parked_meta: "{time} · {n} kaarten",
+  resume_deal: "Hervat",
+  deal_resumed: "Deal hervat",
+
   // Bids
   cash_bid: "Cash bod",
   trade_bid: "Inruil bod",
@@ -112,6 +125,15 @@ const nl = {
   clear_filter: "Wissen",
   tab_cards: "Kaarten",
   tab_history: "Historie",
+  tab_report: "Rapport",
+  rep_buys: "Inkoop",
+  rep_sales: "Verkoop",
+  rep_margin: "Marge",
+  rep_vat: "BTW-indicatie (21/121 uit marge)",
+  rep_tx: "{n} transacties",
+  export_quarter: "Exporteer dit kwartaal (CSV)",
+  rep_note:
+    "Marge = verkoop − inkoop per kaart (margeregeling voor tweedehands goederen). De BTW-indicatie is 21/121 van een positieve kwartaalmarge — bespreek de definitieve aangifte met je boekhouder.",
   filter_placeholder: "Filter op naam of set",
   stock_empty: "Je voorraad is nog leeg. Sluit een deal of voeg handmatig een kaart toe.",
   no_filter_results: "Geen kaarten gevonden met dit filter",
@@ -162,6 +184,12 @@ const nl = {
   tiers_help: "Vanaf het drempelbedrag gelden deze percentages in plaats van de basis",
   tier_from: "Vanaf",
   add_tier: "Tier toevoegen",
+  export_title: "Data & export",
+  export_transactions: "Transacties exporteren",
+  export_inventory: "Voorraad exporteren",
+  export_help: "CSV die direct in Excel opent. Per verkoop staan inkoop, verkoop én marge erin — bruikbaar voor je boekhouding en de margeregeling.",
+  export_empty: "Nog geen data om te exporteren",
+  export_done: "Export gedownload",
   save: "Opslaan",
   saved: "Opgeslagen!",
 
@@ -232,6 +260,17 @@ const en: Record<TKey, string> = {
   removed_from_deal: "{name} removed",
   float_today: "{amount} spent today",
 
+  no_results_for: "Nothing found for “{q}”",
+  enter_manually: "Enter manually",
+  manual_price_hint: "No API price for this card — just fill in the price below and keep going.",
+
+  park_deal: "Pause",
+  deal_parked: "Deal paused",
+  parked_deals: "Paused deals",
+  parked_meta: "{time} · {n} cards",
+  resume_deal: "Resume",
+  deal_resumed: "Deal resumed",
+
   cash_bid: "Cash offer",
   trade_bid: "Trade offer",
 
@@ -279,6 +318,15 @@ const en: Record<TKey, string> = {
   clear_filter: "Clear",
   tab_cards: "Cards",
   tab_history: "History",
+  tab_report: "Report",
+  rep_buys: "Purchases",
+  rep_sales: "Sales",
+  rep_margin: "Margin",
+  rep_vat: "VAT estimate (21/121 of margin)",
+  rep_tx: "{n} transactions",
+  export_quarter: "Export this quarter (CSV)",
+  rep_note:
+    "Margin = sale − purchase per card (margin scheme for second-hand goods). The VAT estimate is 21/121 of a positive quarterly margin — confirm the actual filing with your accountant.",
   filter_placeholder: "Filter by name or set",
   stock_empty: "Your stock is empty. Close a deal or add a card manually.",
   no_filter_results: "No cards match this filter",
@@ -327,6 +375,12 @@ const en: Record<TKey, string> = {
   tiers_help: "From the threshold these percentages replace the base ones",
   tier_from: "From",
   add_tier: "Add tier",
+  export_title: "Data & export",
+  export_transactions: "Export transactions",
+  export_inventory: "Export stock",
+  export_help: "CSV that opens straight into Excel. Every sale includes buy, sell and margin — usable for bookkeeping and the margin scheme.",
+  export_empty: "No data to export yet",
+  export_done: "Export downloaded",
   save: "Save",
   saved: "Saved!",
 

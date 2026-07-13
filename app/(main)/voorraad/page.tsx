@@ -21,6 +21,7 @@ import {
   type CachedPrice,
 } from "@/lib/db";
 import { fmt, fmtSigned, fmtDay, fmtTime, parseDutch } from "@/lib/format";
+import { transactionsCsv, downloadCsv } from "@/lib/export";
 
 const PAYMENT_OPTIONS: { value: PaymentMethod; labelKey: TKey }[] = [
   { value: "cash", labelKey: "pay_cash" },
@@ -61,7 +62,7 @@ export default function VoorraadPage() {
   const { settings } = useSettings();
   const { tr, lang } = useT();
 
-  const [tab, setTab] = useState<"kaarten" | "historie">("kaarten");
+  const [tab, setTab] = useState<"kaarten" | "historie" | "rapport">("kaarten");
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [transactions, setTransactions] = useState<TransactionRecord[]>([]);
   const [prices, setPrices] = useState<Map<string, CachedPrice>>(new Map());
@@ -177,6 +178,51 @@ export default function VoorraadPage() {
     }
     return list;
   }, [inventory, perfFilter, perfOf, condFilter, filter, trendFor]);
+
+  // Quarterly report for bookkeeping / margeregeling
+  const quarters = useMemo(() => {
+    const map = new Map<
+      string,
+      {
+        year: number;
+        q: number;
+        buys: number;
+        buyCards: number;
+        sales: number;
+        saleCards: number;
+        margin: number;
+        txs: TransactionRecord[];
+      }
+    >();
+    for (const tx of transactions) {
+      const d = new Date(tx.createdAt);
+      const q = Math.floor(d.getMonth() / 3) + 1;
+      const key = `${d.getFullYear()}-${q}`;
+      const entry =
+        map.get(key) ??
+        {
+          year: d.getFullYear(),
+          q,
+          buys: 0,
+          buyCards: 0,
+          sales: 0,
+          saleCards: 0,
+          margin: 0,
+          txs: [],
+        };
+      if (tx.type === "buy") {
+        entry.buys += tx.purchasePrice * tx.quantity;
+        entry.buyCards += tx.quantity;
+      } else {
+        entry.sales += tx.sellPrice * tx.quantity;
+        entry.saleCards += tx.quantity;
+        entry.margin += (tx.sellPrice - tx.purchasePrice) * tx.quantity;
+      }
+      entry.txs.push(tx);
+      map.set(key, entry);
+    }
+    return [...map.values()].sort((a, b) => b.year - a.year || b.q - a.q);
+  }, [transactions]);
 
   // Transactions grouped per day
   const txByDay = useMemo(() => {
@@ -341,7 +387,7 @@ export default function VoorraadPage() {
 
       {/* Tabs */}
       <div className="flex bg-surface-raised border border-edge rounded-2xl p-1 animate-rise">
-        {(["kaarten", "historie"] as const).map((t) => (
+        {(["kaarten", "historie", "rapport"] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -351,7 +397,11 @@ export default function VoorraadPage() {
                 : "text-content-dim"
             }`}
           >
-            {t === "kaarten" ? tr("tab_cards") : tr("tab_history")}
+            {t === "kaarten"
+              ? tr("tab_cards")
+              : t === "historie"
+              ? tr("tab_history")
+              : tr("tab_report")}
           </button>
         ))}
       </div>
@@ -593,6 +643,102 @@ export default function VoorraadPage() {
               );
             })}
           </div>
+        </>
+      )}
+
+      {/* ═══ RAPPORT TAB — kwartaaloverzicht voor de boekhouding ═══ */}
+      {tab === "rapport" && (
+        <>
+          {quarters.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-16 gap-4 text-center animate-rise-lg">
+              <div className="w-16 h-16 rounded-2xl bg-surface-raised border border-edge flex items-center justify-center">
+                <span className="ms text-3xl text-content-faint">receipt_long</span>
+              </div>
+              <p className="text-[15px] text-content-dim max-w-[240px] leading-relaxed">
+                {tr("history_empty")}
+              </p>
+            </div>
+          )}
+
+          <div className="flex flex-col gap-4">
+            {quarters.map((qt) => {
+              const vat = qt.margin > 0 ? (qt.margin * 21) / 121 : 0;
+              return (
+                <section
+                  key={`${qt.year}-${qt.q}`}
+                  className="ticket border border-edge rounded-[20px] p-4 flex flex-col gap-3 animate-rise"
+                >
+                  {/* Quarter header */}
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-[17px] font-black tracking-tight text-content">
+                      Q{qt.q}{" "}
+                      <span className="text-content-dim font-bold">{qt.year}</span>
+                    </h2>
+                    <span className="text-[11px] font-semibold text-content-dim bg-surface-card border border-edge rounded-full px-2.5 py-1">
+                      {tr("rep_tx", { n: qt.txs.length })}
+                    </span>
+                  </div>
+
+                  {/* Totals */}
+                  <div className="flex flex-col gap-1.5 text-[14px]">
+                    <div className="flex items-center justify-between">
+                      <span className="text-content-dim">
+                        {tr("rep_buys")} · {qt.buyCards}×
+                      </span>
+                      <span className="font-mono font-bold text-gold-bright tabular-nums">
+                        {fmt(qt.buys)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-content-dim">
+                        {tr("rep_sales")} · {qt.saleCards}×
+                      </span>
+                      <span className="font-mono font-bold text-trade tabular-nums">
+                        {fmt(qt.sales)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between border-t border-edge pt-2 mt-0.5">
+                      <span className="font-bold text-content">{tr("rep_margin")}</span>
+                      <span
+                        className={`font-mono font-bold text-[16px] tabular-nums ${
+                          qt.margin >= 0 ? "text-trade" : "text-danger"
+                        }`}
+                      >
+                        {fmtSigned(qt.margin)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[13px] text-content-dim">{tr("rep_vat")}</span>
+                      <span className="font-mono font-semibold text-[13px] text-content-dim tabular-nums">
+                        {fmt(vat)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Export this quarter */}
+                  <button
+                    onClick={() => {
+                      downloadCsv(
+                        `cardpit-transacties-${qt.year}-Q${qt.q}.csv`,
+                        transactionsCsv(qt.txs, lang)
+                      );
+                      showToast(tr("export_done"));
+                    }}
+                    className="press flex items-center justify-center gap-2 h-11 rounded-xl border border-edge-bright bg-surface-card text-content font-bold text-[13px]"
+                  >
+                    <span className="ms text-[17px] text-gold">download</span>
+                    {tr("export_quarter")}
+                  </button>
+                </section>
+              );
+            })}
+          </div>
+
+          {quarters.length > 0 && (
+            <p className="text-[12px] text-content-faint px-1 leading-relaxed">
+              {tr("rep_note")}
+            </p>
+          )}
         </>
       )}
 

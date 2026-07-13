@@ -7,6 +7,7 @@
  *   priceCache    — Cardmarket prices by card ID (TTL enforced in priceService)
  *   inventory     — cards the vendor owns (fase 2)
  *   transactions  — every buy/sell/trade, source for dagoverzicht (fase 2)
+ *   parkedDeals   — paused carts ("klant komt zo terug")
  */
 
 import { openDB, type DBSchema, type IDBPDatabase } from "idb";
@@ -45,6 +46,13 @@ export type InventoryItem = {
   marketPriceAtPurchase: number; // trend at time of purchase (0 if unknown)
   purchasedAt: number;      // Date.now()
   notes: string;
+};
+
+/** A paused deal: the whole cart saved aside while the customer thinks. */
+export type ParkedDeal = {
+  id: string;
+  items: CartItem[];
+  createdAt: number;
 };
 
 export type TransactionRecord = {
@@ -130,6 +138,10 @@ interface CardPitDB extends DBSchema {
     value: TransactionRecord;
     indexes: { "by-date": number };
   };
+  parkedDeals: {
+    key: string;           // ParkedDeal.id
+    value: ParkedDeal;
+  };
 }
 
 // ─── DB singleton ─────────────────────────────────────────────────────────────
@@ -138,7 +150,7 @@ let dbPromise: Promise<IDBPDatabase<CardPitDB>> | null = null;
 
 export function getDB(): Promise<IDBPDatabase<CardPitDB>> {
   if (!dbPromise) {
-    dbPromise = openDB<CardPitDB>("cardpit", 2, {
+    dbPromise = openDB<CardPitDB>("cardpit", 3, {
       upgrade(db, oldVersion) {
         if (oldVersion < 1) {
           const cartStore = db.createObjectStore("cart", { keyPath: "id" });
@@ -151,6 +163,9 @@ export function getDB(): Promise<IDBPDatabase<CardPitDB>> {
           inv.createIndex("by-card", "cardId");
           const tx = db.createObjectStore("transactions", { keyPath: "id" });
           tx.createIndex("by-date", "createdAt");
+        }
+        if (oldVersion < 3) {
+          db.createObjectStore("parkedDeals", { keyPath: "id" });
         }
       },
     });
@@ -176,6 +191,21 @@ export async function removeCartItem(id: string): Promise<void> {
 
 export async function clearCart(): Promise<void> {
   await (await getDB()).clear("cart");
+}
+
+// ─── Parked deal helpers ──────────────────────────────────────────────────────
+
+export async function getParkedDeals(): Promise<ParkedDeal[]> {
+  const deals = await (await getDB()).getAll("parkedDeals");
+  return deals.sort((a, b) => b.createdAt - a.createdAt);
+}
+
+export async function addParkedDeal(deal: ParkedDeal): Promise<void> {
+  await (await getDB()).put("parkedDeals", deal);
+}
+
+export async function removeParkedDeal(id: string): Promise<void> {
+  await (await getDB()).delete("parkedDeals", id);
 }
 
 // ─── Settings helpers ─────────────────────────────────────────────────────────

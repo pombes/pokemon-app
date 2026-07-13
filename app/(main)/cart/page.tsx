@@ -15,7 +15,7 @@ import {
   type CartItem,
   type PaymentMethod,
 } from "@/lib/db";
-import { fmt } from "@/lib/format";
+import { fmt, fmtTime } from "@/lib/format";
 import type { TKey } from "@/lib/i18n";
 
 const PAYMENT_OPTIONS: { value: PaymentMethod; labelKey: TKey; icon: string }[] = [
@@ -27,7 +27,19 @@ const PAYMENT_OPTIONS: { value: PaymentMethod; labelKey: TKey; icon: string }[] 
 ];
 
 export default function WinkelwagenPage() {
-  const { items, remove, updateQty, undo, canUndo, clear, loading } = useCart();
+  const {
+    items,
+    remove,
+    updateQty,
+    undo,
+    canUndo,
+    clear,
+    loading,
+    parked,
+    park,
+    resume,
+    discardParked,
+  } = useCart();
   const { settings } = useSettings();
   const { tr } = useT();
   const router = useRouter();
@@ -70,6 +82,16 @@ export default function WinkelwagenPage() {
   async function undoLast() {
     await undo();
     showToast(tr("undone"));
+  }
+
+  async function handlePark() {
+    await park();
+    showToast(tr("deal_parked"));
+  }
+
+  async function handleResume(id: string) {
+    await resume(id);
+    showToast(tr("deal_resumed"));
   }
 
   async function confirmDeal() {
@@ -188,13 +210,78 @@ export default function WinkelwagenPage() {
             {tr("deal")}
           </h1>
           {hasItems && (
-            <span className="text-[13px] font-semibold text-content-dim bg-surface-raised border border-edge rounded-full px-3 py-1">
-              {totalCards === 1
-                ? tr("card_count_one")
-                : tr("cards_count", { n: totalCards })}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-[13px] font-semibold text-content-dim bg-surface-raised border border-edge rounded-full px-3 py-1">
+                {totalCards === 1
+                  ? tr("card_count_one")
+                  : tr("cards_count", { n: totalCards })}
+              </span>
+              {/* Park: customer walks off to think, next customer steps up */}
+              <button
+                onClick={handlePark}
+                className="press flex items-center gap-1.5 h-9 px-3.5 rounded-xl ticket border border-edge-bright text-content font-bold text-[13px]"
+              >
+                <span className="ms text-[17px] text-gold">pause</span>
+                {tr("park_deal")}
+              </button>
+            </div>
           )}
         </div>
+
+        {/* Parked deals — one tap to bring a waiting customer back */}
+        {parked.length > 0 && (
+          <section className="flex flex-col gap-2 animate-rise">
+            <h2 className="text-[12px] font-bold text-content-dim uppercase tracking-[0.08em] px-1">
+              {tr("parked_deals")}
+            </h2>
+            <div className="ticket border border-edge rounded-2xl overflow-hidden">
+              {parked.map((deal, i) => {
+                const n = deal.items.reduce((s, it) => s + it.quantity, 0);
+                const value = deal.items.reduce(
+                  (s, it) =>
+                    s +
+                    (it.type === "inkoop" ? it.cashBid : it.tradeBid) * it.quantity,
+                  0
+                );
+                return (
+                  <div
+                    key={deal.id}
+                    className={`flex items-center gap-3 px-3.5 py-3 ${
+                      i > 0 ? "border-t border-edge" : ""
+                    }`}
+                  >
+                    <div className="w-9 h-9 flex-none rounded-xl bg-gold/10 border border-gold/30 flex items-center justify-center">
+                      <span className="ms text-[18px] text-gold">pause</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-bold text-[13px] text-content truncate">
+                        {deal.items[0]?.cardName}
+                        {deal.items.length > 1 ? ` +${deal.items.length - 1}` : ""}
+                      </div>
+                      <div className="text-[11px] text-content-dim mt-0.5">
+                        {tr("parked_meta", { time: fmtTime(deal.createdAt), n })} ·{" "}
+                        <span className="font-mono tabular-nums">{fmt(value)}</span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleResume(deal.id)}
+                      className="press flex-none flex items-center gap-1 h-9 px-3 rounded-xl bg-gradient-to-b from-gold to-gold-deep text-base font-extrabold text-[12px]"
+                    >
+                      <span className="ms text-[16px]">play_arrow</span>
+                      {tr("resume_deal")}
+                    </button>
+                    <button
+                      onClick={() => discardParked(deal.id)}
+                      className="press w-9 h-9 flex-none rounded-xl flex items-center justify-center text-content-ghost active:text-danger"
+                    >
+                      <span className="ms text-[18px]">delete</span>
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         {/* Empty state */}
         {!hasItems && (

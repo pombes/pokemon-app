@@ -63,6 +63,7 @@ export default function ZoekenPage() {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showResults, setShowResults] = useState(false);
+  const [noResults, setNoResults] = useState(false);
 
   // Scan state
   const [isScanning, setIsScanning] = useState(false);
@@ -182,16 +183,24 @@ export default function ZoekenPage() {
         ) {
           setResults([]);
           setShowResults(false);
+          setNoResults(false);
           return;
         }
         setIsSearching(true);
+        setNoResults(false);
         try {
           const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
           const data = await res.json();
-          setResults(data.results ?? []);
+          const found = data.results ?? [];
+          setResults(found);
           setShowResults(true);
+          // New sets, promos, obscure cards: API doesn't know everything.
+          // Offer the manual path instead of dead-ending.
+          setNoResults(found.length === 0);
         } catch {
-          // offline — no results, vendor can manually enter price
+          // offline — same manual path applies
+          setResults([]);
+          setNoResults(true);
         } finally {
           setIsSearching(false);
         }
@@ -218,6 +227,22 @@ export default function ZoekenPage() {
     setSlab(null);
     setEbay(null);
     setEbayError("");
+  }
+
+  /** Card the API doesn't know: proceed with just a name + manual price. */
+  function selectManual() {
+    const name = query.trim();
+    if (!name) return;
+    exitSlab();
+    setSelected({ id: "", name, set: "", number: "", imageUrl: "" });
+    setShowResults(false);
+    setNoResults(false);
+    setResults([]);
+    setPrice(null);
+    setPriceError("");
+    setPriceOverride(null);
+    setQty(1);
+    setIsFetchingPrice(false);
   }
 
   async function selectCard(card: SearchResult) {
@@ -515,6 +540,26 @@ export default function ZoekenPage() {
             ))}
           </div>
         )}
+
+        {/* No results — never a dead end: continue with manual entry */}
+        {noResults &&
+          !isSearching &&
+          !selected &&
+          !slab &&
+          query.trim().length >= 2 && (
+            <div className="absolute top-full left-0 right-0 mt-2 bg-surface-raised border border-edge-bright rounded-2xl z-40 shadow-[0_16px_48px_rgba(0,0,0,0.6)] animate-pop p-4 flex flex-col gap-3">
+              <p className="text-[14px] text-content-dim">
+                {tr("no_results_for", { q: query.trim() })}
+              </p>
+              <button
+                onClick={selectManual}
+                className="press flex items-center justify-center gap-2 h-12 rounded-xl bg-gradient-to-b from-gold to-gold-deep text-base font-extrabold text-[14px]"
+              >
+                <span className="ms text-[19px]">edit</span>
+                {tr("enter_manually")}
+              </button>
+            </div>
+          )}
       </div>
 
       {/* Selected card or slab — everything below staggers in */}
@@ -588,6 +633,14 @@ export default function ZoekenPage() {
               )}
             </div>
           </div>
+          )}
+
+          {/* Manual card: friendly hint instead of an error */}
+          {selected && !selected.id && !price && (
+            <div className="flex items-start gap-2.5 bg-gold/8 border border-gold/30 rounded-xl px-3.5 py-3 text-[13px] text-gold-bright font-medium leading-snug">
+              <span className="ms text-[17px] flex-none mt-0.5">edit</span>
+              {tr("manual_price_hint")}
+            </div>
           )}
 
           {/* Slab panel — graded card recognized from a scan */}

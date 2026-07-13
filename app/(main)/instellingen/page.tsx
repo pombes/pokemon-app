@@ -5,7 +5,19 @@ import Link from "next/link";
 import { useSettings } from "@/hooks/useSettings";
 import { fmt } from "@/lib/format";
 import { t, LANGUAGES, type Lang, type TKey } from "@/lib/i18n";
-import type { BidTier, Condition, VendorSettings } from "@/lib/db";
+import {
+  getTransactions,
+  getInventory,
+  type BidTier,
+  type Condition,
+  type VendorSettings,
+} from "@/lib/db";
+import {
+  transactionsCsv,
+  inventoryCsv,
+  downloadCsv,
+  exportFilename,
+} from "@/lib/export";
 
 const CONDITIONS: Condition[] = ["MT", "NM", "EX", "GD", "LP", "PL", "PO"];
 
@@ -42,6 +54,7 @@ function SettingsForm({
   const [rounding, setRounding] = useState(initial.rounding ?? 0);
   const [tiers, setTiers] = useState<BidTier[]>(initial.bidTiers ?? []);
   const [saved, setSaved] = useState(false);
+  const [exportMsg, setExportMsg] = useState("");
 
   // Preview the chosen language immediately on this screen; the rest of the
   // app switches once the vendor saves.
@@ -68,6 +81,28 @@ function SettingsForm({
 
   function setTier(index: number, patch: Partial<BidTier>) {
     setTiers((prev) => prev.map((t, i) => (i === index ? { ...t, ...patch } : t)));
+  }
+
+  async function exportTransactions() {
+    const txs = await getTransactions();
+    if (txs.length === 0) {
+      setExportMsg(tr("export_empty"));
+    } else {
+      downloadCsv(exportFilename("transacties"), transactionsCsv(txs, language));
+      setExportMsg(tr("export_done"));
+    }
+    setTimeout(() => setExportMsg(""), 2500);
+  }
+
+  async function exportInventory() {
+    const inv = await getInventory();
+    if (inv.length === 0) {
+      setExportMsg(tr("export_empty"));
+    } else {
+      downloadCsv(exportFilename("voorraad"), inventoryCsv(inv));
+      setExportMsg(tr("export_done"));
+    }
+    setTimeout(() => setExportMsg(""), 2500);
   }
 
   return (
@@ -316,6 +351,45 @@ function SettingsForm({
             </div>
           ))}
         </div>
+      </section>
+
+      {/* Data & export */}
+      <section className="flex flex-col gap-3">
+        <h2 className="text-[12px] font-bold text-content-dim uppercase tracking-[0.08em]">
+          {tr("export_title")}
+        </h2>
+        <div className="flex flex-col gap-2">
+          <button
+            onClick={exportTransactions}
+            className="press flex items-center gap-3 ticket border border-edge rounded-2xl px-4 h-14 text-left"
+          >
+            <span className="ms text-[20px] text-gold">download</span>
+            <span className="flex-1 text-[15px] font-bold text-content">
+              {tr("export_transactions")}
+            </span>
+            <span className="font-mono text-[11px] font-bold text-content-dim bg-surface-card border border-edge rounded-md px-1.5 py-0.5">
+              CSV
+            </span>
+          </button>
+          <button
+            onClick={exportInventory}
+            className="press flex items-center gap-3 ticket border border-edge rounded-2xl px-4 h-14 text-left"
+          >
+            <span className="ms text-[20px] text-gold">download</span>
+            <span className="flex-1 text-[15px] font-bold text-content">
+              {tr("export_inventory")}
+            </span>
+            <span className="font-mono text-[11px] font-bold text-content-dim bg-surface-card border border-edge rounded-md px-1.5 py-0.5">
+              CSV
+            </span>
+          </button>
+        </div>
+        {exportMsg && (
+          <p className="text-[13px] font-semibold text-trade px-1 animate-rise">
+            {exportMsg}
+          </p>
+        )}
+        <p className="text-[12px] text-content-faint px-1 -mt-1">{tr("export_help")}</p>
       </section>
 
       {/* Save button */}
