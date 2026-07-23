@@ -262,6 +262,11 @@ export async function saveSettings(settings: VendorSettings): Promise<void> {
 
 // ─── Price cache helpers ──────────────────────────────────────────────────────
 
+/** Current epoch ms. Lives here so components stay pure (no Date.now in render). */
+export function nowMs(): number {
+  return Date.now();
+}
+
 export async function getCachedPrice(
   cardId: string
 ): Promise<CachedPrice | undefined> {

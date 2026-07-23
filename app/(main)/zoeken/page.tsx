@@ -11,6 +11,7 @@ import {
   getCachedPriceWithAge,
   setCachedPrice,
   getTodaySpend,
+  nowMs,
   type CachedPrice,
   type Condition,
 } from "@/lib/db";
@@ -37,7 +38,13 @@ type SearchResult = {
   set: string;
   number: string;
   imageUrl: string;
+  // Present for sealed products: no condition, price carried inline so
+  // selecting one needs no second (slow) API call.
+  sealed?: boolean;
+  price?: { trendPrice: number; avg7: number; avg30: number; lowPrice: number };
 };
+
+type SearchMode = "cards" | "sealed";
 
 type EbayItem = {
   title: string;
@@ -81,6 +88,7 @@ export default function ZoekenPage() {
 
   // Search state
   const [query, setQuery] = useState("");
+  const [mode, setMode] = useState<SearchMode>("cards");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showResults, setShowResults] = useState(false);
@@ -111,7 +119,10 @@ export default function ZoekenPage() {
   const [priceOverride, setPriceOverride] = useState<string | null>(null);
   const [qty, setQty] = useState(1);
 
-  const mult = (settings.conditionMultipliers[condition] ?? 100) / 100;
+  // Sealed products have no condition — the multiplier is always 100%.
+  const mult = selected?.sealed
+    ? 1
+    : (settings.conditionMultipliers[condition] ?? 100) / 100;
   const baseCorrected = price ? price.trendPrice * mult : 0;
   const correctedInput =
     priceOverride ?? (price ? baseCorrected.toFixed(2).replace(".", ",") : "");
@@ -189,14 +200,14 @@ export default function ZoekenPage() {
     };
   }, []);
 
-  // Debounced search
+  // Live search-as-you-type: a debounced dropdown, the pattern every polished
+  // app uses. Runs per query/mode change; guards skip firing when the query
+  // just echoes the selected card/slab (which would reopen the dropdown over
+  // the result panel).
   useEffect(() => {
     const q = query.trim();
     const timer = setTimeout(
       async () => {
-        // Skip when the query is short, or when it was set by selecting a
-        // card or recognizing a slab — otherwise the dropdown would reopen
-        // over the result panel.
         if (
           q.length < 2 ||
           (selected && q === selected.name) ||
@@ -210,26 +221,51 @@ export default function ZoekenPage() {
         setIsSearching(true);
         setNoResults(false);
         try {
-          const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+          const res = await fetch(
+            `/api/search?q=${encodeURIComponent(q)}&type=${mode}`
+          );
           const data = await res.json();
-          const found = data.results ?? [];
+          const found: SearchResult[] = data.results ?? [];
           setResults(found);
           setShowResults(true);
-          // New sets, promos, obscure cards: API doesn't know everything.
-          // Offer the manual path instead of dead-ending.
+          // New sets, promos, obscure cards: the API doesn't know everything.
+          // Offer the manual path instead of dead-ending (cards mode only).
           setNoResults(found.length === 0);
         } catch {
-          // offline — same manual path applies
           setResults([]);
           setNoResults(true);
         } finally {
           setIsSearching(false);
         }
       },
-      q.length < 2 ? 0 : 550
+      q.length < 2 ? 0 : 500
     );
     return () => clearTimeout(timer);
-  }, [query, selected, slab]);
+  }, [query, selected, slab, mode]);
+
+  // Enter (or the search button) forces an immediate search, bypassing the
+  // debounce — handy when the vendor typed fast and wants results now.
+  async function runSearch() {
+    const q = query.trim();
+    if (q.length < 2 || isSearching) return;
+    setIsSearching(true);
+    setNoResults(false);
+    try {
+      const res = await fetch(
+        `/api/search?q=${encodeURIComponent(q)}&type=${mode}`
+      );
+      const data = await res.json();
+      const found: SearchResult[] = data.results ?? [];
+      setResults(found);
+      setShowResults(true);
+      setNoResults(found.length === 0);
+    } catch {
+      setResults([]);
+      setNoResults(true);
+    } finally {
+      setIsSearching(false);
+    }
+  }
 
   // Persist current selection to sessionStorage
   useEffect(() => {
@@ -288,6 +324,27 @@ export default function ZoekenPage() {
       }
       return next;
     });
+
+    // Sealed products carry their price inline — no second API call needed.
+    if (card.sealed && card.price) {
+      const p: CachedPrice = {
+        cardId: card.id,
+        cardName: card.name,
+        cardSet: card.set,
+        trendPrice: card.price.trendPrice,
+        averageSellPrice: card.price.avg7,
+        avg1: card.price.avg7,
+        avg7: card.price.avg7,
+        avg30: card.price.avg30,
+        lowPrice: card.price.lowPrice,
+        fetchedAt: nowMs(),
+      };
+      setPrice(p);
+      setPriceFromCache(false);
+      setIsFetchingPrice(false);
+      if (card.id) void logPriceLookup(card.id, p.trendPrice, "cardmarket");
+      return;
+    }
 
     // 1. Check IndexedDB cache first
     try {
@@ -427,6 +484,7 @@ export default function ZoekenPage() {
   async function addToCart(type: "inkoop" | "inruil") {
     const isSlab = !selected && slab !== null;
     if (!selected && !slab) return;
+    const isSealed = !!selected?.sealed;
     const name = isSlab
       ? `${slab!.name} · ${slab!.company} ${slab!.grade}`.trim()
       : selected!.name;
@@ -435,7 +493,9 @@ export default function ZoekenPage() {
       cardName: name,
       cardSet: isSlab ? slab!.set : selected!.set,
       cardImageUrl: isSlab ? "" : selected!.imageUrl,
-      condition: isSlab ? "MT" : condition,
+      // Slabs and sealed products carry no raw-card condition; "MT" (mint,
+      // i.e. sealed/graded) is the honest placeholder.
+      condition: isSlab || isSealed ? "MT" : condition,
       type,
       quantity: qty,
       correctedPrice: correctedNum,
@@ -496,10 +556,46 @@ export default function ZoekenPage() {
         </div>
       </div>
 
+      {/* Mode toggle — losse kaarten vs sealed producten */}
+      <div className="flex bg-surface-raised border border-edge rounded-2xl p-1 animate-rise">
+        {(["cards", "sealed"] as const).map((m) => (
+          <button
+            key={m}
+            onClick={() => {
+              if (m === mode) return;
+              setMode(m);
+              setResults([]);
+              setShowResults(false);
+              setNoResults(false);
+              setSelected(null);
+              exitSlab();
+              searchRef.current?.focus();
+            }}
+            className={`flex-1 flex items-center justify-center gap-1.5 h-10 rounded-xl text-[14px] font-bold transition-all duration-200 ${
+              mode === m
+                ? "bg-surface-card text-gold-bright border border-edge-bright shadow-sm"
+                : "text-content-dim"
+            }`}
+          >
+            <span className="ms text-[18px]">
+              {m === "cards" ? "style" : "inventory_2"}
+            </span>
+            {m === "cards" ? tr("mode_cards") : tr("mode_sealed")}
+          </button>
+        ))}
+      </div>
+
       {/* Search bar — z-30 so the results dropdown always paints above the
-          (transform-animated) sections below it */}
+          (transform-animated) sections below it. Live search-as-you-type;
+          Enter forces an immediate search. */}
       <div className="relative z-30 animate-rise">
-        <div className="flex items-center gap-2.5 ticket border border-edge rounded-2xl pl-4 pr-1.5 h-[56px] focus-within:border-gold/50 transition-colors">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            runSearch();
+          }}
+          className="flex items-center gap-2.5 ticket border border-edge rounded-2xl pl-4 pr-1.5 h-[56px] focus-within:border-gold/50 transition-colors"
+        >
           <span className={`ms text-[21px] flex-none ${isSearching ? "text-gold animate-spin-slow" : "text-content-dim"}`}>
             {isSearching ? "progress_activity" : "search"}
           </span>
@@ -511,19 +607,27 @@ export default function ZoekenPage() {
               if (selected) setSelected(null);
               if (slab) exitSlab();
             }}
-            placeholder={tr("search_placeholder")}
+            enterKeyHint="search"
+            placeholder={
+              mode === "sealed"
+                ? tr("search_placeholder_sealed")
+                : tr("search_placeholder")
+            }
             className="flex-1 bg-transparent border-none outline-none text-content text-[16px] font-medium placeholder:text-content-faint min-w-0"
           />
-          {/* Camera scan button */}
-          <button
-            onClick={() => scanInputRef.current?.click()}
-            disabled={isScanning}
-            className="press w-11 h-11 rounded-xl bg-gradient-to-b from-gold to-gold-deep flex items-center justify-center flex-none shadow-[0_0_16px_rgba(240,180,64,0.35)]"
-          >
-            <span className={`ms text-[22px] text-base ${isScanning ? "animate-spin-slow" : ""}`}>
-              {isScanning ? "progress_activity" : "photo_camera"}
-            </span>
-          </button>
+          {/* Camera scan button (cards mode only — scans graded slabs) */}
+          {mode === "cards" && (
+            <button
+              type="button"
+              onClick={() => scanInputRef.current?.click()}
+              disabled={isScanning}
+              className="press w-11 h-11 rounded-xl bg-gradient-to-b from-gold to-gold-deep flex items-center justify-center flex-none shadow-[0_0_16px_rgba(240,180,64,0.35)]"
+            >
+              <span className={`ms text-[22px] text-base ${isScanning ? "animate-spin-slow" : ""}`}>
+                {isScanning ? "progress_activity" : "photo_camera"}
+              </span>
+            </button>
+          )}
           <input
             ref={scanInputRef}
             type="file"
@@ -536,7 +640,7 @@ export default function ZoekenPage() {
               e.target.value = "";
             }}
           />
-        </div>
+        </form>
 
         {/* Search results dropdown */}
         {showResults && results.length > 0 && (
@@ -567,15 +671,23 @@ export default function ZoekenPage() {
                     {card.number ? ` · ${card.number}` : ""}
                   </div>
                 </div>
-                <span className="ms text-[18px] text-content-faint flex-none">
-                  chevron_right
-                </span>
+                {/* Sealed rows carry their price — show it right away */}
+                {card.sealed && card.price ? (
+                  <span className="font-mono font-bold text-[14px] text-gold-bright tabular-nums flex-none">
+                    {fmt(card.price.trendPrice)}
+                  </span>
+                ) : (
+                  <span className="ms text-[18px] text-content-faint flex-none">
+                    chevron_right
+                  </span>
+                )}
               </button>
             ))}
           </div>
         )}
 
-        {/* No results — never a dead end: continue with manual entry */}
+        {/* No results. In cards mode we never dead-end: offer manual entry.
+            In sealed mode we just say nothing was found. */}
         {noResults &&
           !isSearching &&
           !selected &&
@@ -585,13 +697,15 @@ export default function ZoekenPage() {
               <p className="text-[14px] text-content-dim">
                 {tr("no_results_for", { q: query.trim() })}
               </p>
-              <button
-                onClick={selectManual}
-                className="press flex items-center justify-center gap-2 h-12 rounded-xl bg-gradient-to-b from-gold to-gold-deep text-base font-extrabold text-[14px]"
-              >
-                <span className="ms text-[19px]">edit</span>
-                {tr("enter_manually")}
-              </button>
+              {mode === "cards" && (
+                <button
+                  onClick={selectManual}
+                  className="press flex items-center justify-center gap-2 h-12 rounded-xl bg-gradient-to-b from-gold to-gold-deep text-base font-extrabold text-[14px]"
+                >
+                  <span className="ms text-[19px]">edit</span>
+                  {tr("enter_manually")}
+                </button>
+              )}
             </div>
           )}
       </div>
@@ -839,8 +953,9 @@ export default function ZoekenPage() {
             </>
           )}
 
-          {/* Condition pills — raw cards only; a slab's grade replaces condition */}
-          {selected && (
+          {/* Condition pills — raw cards only; slabs use their grade, sealed
+              products have no condition at all */}
+          {selected && !selected.sealed && (
           <div className="flex flex-col gap-2">
             <span className="text-[12px] font-bold text-content-dim uppercase tracking-[0.08em]">
               {tr("condition")}

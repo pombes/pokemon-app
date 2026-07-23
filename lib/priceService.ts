@@ -33,6 +33,17 @@ export type CardSearchResult = {
   imageUrl: string;
 };
 
+/** Sealed product (ETB, booster bundle, tin…) — no condition, price inline. */
+export type ProductSearchResult = {
+  id: string;
+  name: string;
+  set: string;
+  number: string; // always "" — kept for a uniform client shape
+  imageUrl: string;
+  sealed: true;
+  price: { trendPrice: number; avg7: number; avg30: number; lowPrice: number };
+};
+
 export type CardPriceData = {
   cardId: string;
   cardName: string;
@@ -59,6 +70,27 @@ function headers(key: string): HeadersInit {
   return { "x-rapidapi-host": TCGGO_HOST, "x-rapidapi-key": key };
 }
 
+/**
+ * GET with a retry. The TCGGO products endpoint in particular 500s
+ * intermittently on the same query, so one retry after a short pause turns
+ * many transient failures into successes. Kept to 2 attempts to stay easy
+ * on the daily request quota.
+ */
+async function getJson(
+  url: string,
+  key: string,
+  attempts = 2
+): Promise<Response> {
+  let last: Response | null = null;
+  for (let i = 0; i < attempts; i++) {
+    const res = await fetch(url, { headers: headers(key), cache: "no-store" });
+    if (res.ok) return res;
+    last = res;
+    if (i < attempts - 1) await new Promise((r) => setTimeout(r, 500));
+  }
+  return last as Response;
+}
+
 // ─── In-memory cache ──────────────────────────────────────────────────────────
 // The upstream TCGGO API is slow (~2–8s per search). At a fair, vendors look
 // up the same popular cards over and over, so caching identical queries for a
@@ -67,6 +99,7 @@ function headers(key: string): HeadersInit {
 
 const SEARCH_TTL = 10 * 60 * 1000; // 10 min
 const searchCache = new Map<string, { data: CardSearchResult[]; at: number }>();
+const productCache = new Map<string, { data: ProductSearchResult[]; at: number }>();
 
 function cacheGet<T>(
   cache: Map<string, { data: T; at: number }>,
@@ -128,8 +161,8 @@ export async function searchCards(query: string): Promise<CardSearchResult[]> {
   const cached = cacheGet(searchCache, cacheKey, SEARCH_TTL);
   if (cached) return cached;
 
-  const url = `${TCGGO_BASE}/pokemon/cards?search=${encodeURIComponent(query)}&per_page=20`;
-  const res = await fetch(url, { headers: headers(key), cache: "no-store" });
+  const url = `${TCGGO_BASE}/pokemon/cards?search=${encodeURIComponent(query)}&per_page=10`;
+  const res = await getJson(url, key);
   if (!res.ok) {
     throw new Error(`Zoekfout: ${res.status} ${res.statusText}`);
   }
@@ -152,6 +185,57 @@ export async function searchCards(query: string): Promise<CardSearchResult[]> {
     }));
 
   searchCache.set(cacheKey, { data: results, at: Date.now() });
+  return results;
+}
+
+// ─── Search sealed products by name ───────────────────────────────────────────
+// ETBs, booster bundles, tins, UPCs. Prices come inline (products carry their
+// Cardmarket block in the search response), so selecting one needs no second
+// call. Called by: /api/search?q=<query>&type=sealed
+
+export async function searchProducts(
+  query: string
+): Promise<ProductSearchResult[]> {
+  const key = getTcggoKey();
+  if (!key) throw new Error("TCGGO_RAPIDAPI_KEY is not configured.");
+
+  const cacheKey = query.trim().toLowerCase();
+  const cached = cacheGet(productCache, cacheKey, SEARCH_TTL);
+  if (cached) return cached;
+
+  const url = `${TCGGO_BASE}/pokemon/products?search=${encodeURIComponent(query)}&per_page=10`;
+  const res = await getJson(url, key, 3); // products endpoint is the flaky one
+  if (!res.ok) throw new Error(`Zoekfout: ${res.status} ${res.statusText}`);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const body = (await res.json()) as { data: any[] };
+  const results: ProductSearchResult[] = (body.data ?? [])
+    .map((p) => {
+      const cm = p?.prices?.cardmarket ?? {};
+      const avg7 = Number(cm["7d_average"]) || 0;
+      const avg30 = Number(cm["30d_average"]) || 0;
+      // Products expose `lowest` (whole sealed item), singles `lowest_near_mint`
+      const low = Number(cm.lowest) || 0;
+      const trend = avg7 || avg30 || low;
+      return {
+        id: String(p.id),
+        name: String(p.name ?? ""),
+        set: String(p?.episode?.name ?? ""),
+        number: "",
+        imageUrl: String(p.image ?? ""),
+        sealed: true as const,
+        price: {
+          trendPrice: trend,
+          avg7: avg7 || trend,
+          avg30: avg30 || trend,
+          lowPrice: low,
+        },
+      };
+    })
+    .filter((r) => r.price.trendPrice > 0)
+    .sort((a, b) => b.price.trendPrice - a.price.trendPrice);
+
+  productCache.set(cacheKey, { data: results, at: Date.now() });
   return results;
 }
 

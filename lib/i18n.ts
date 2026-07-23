@@ -19,7 +19,11 @@ const nl = {
   nav_settings: "Instellingen",
 
   // Zoeken
-  search_placeholder: "Zoek kaart (bijv. Charizard ex)",
+  search_placeholder: "Zoek kaart (bijv. Charizard ex 223)",
+  search_placeholder_sealed: "Zoek sealed op set (bijv. Obsidian Flames)",
+  search_action: "Zoeken",
+  mode_cards: "Kaarten",
+  mode_sealed: "Sealed",
   condition: "Conditie",
   corrected_price: "Gecorrigeerde prijs",
   editable: "aanpasbaar",
@@ -226,7 +230,11 @@ const en: Record<TKey, string> = {
   nav_stock: "Stock",
   nav_settings: "Settings",
 
-  search_placeholder: "Search card (e.g. Charizard ex)",
+  search_placeholder: "Search card (e.g. Charizard ex 223)",
+  search_placeholder_sealed: "Search sealed by set (e.g. Obsidian Flames)",
+  search_action: "Search",
+  mode_cards: "Cards",
+  mode_sealed: "Sealed",
   condition: "Condition",
   corrected_price: "Adjusted price",
   editable: "editable",
