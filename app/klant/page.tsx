@@ -52,14 +52,18 @@ export default function KlantPage() {
         <div className="w-11" />
       </div>
 
-      {/* Subtitle */}
+      {/* Subtitle — this screen is a receipt of an already-made split
+          (which card is cash, which is credit), never a choice to make
+          here. Only shown when there's actually a mix to describe. */}
       <div className="px-6 pb-5 animate-rise">
         <h1 className="text-[28px] font-black tracking-tight text-content">
           {tr("your_offer")}
         </h1>
-        <p className="text-[14px] text-content-dim mt-0.5">
-          {tr("your_offer_sub")}
-        </p>
+        {inkoop.length > 0 && inruil.length > 0 && (
+          <p className="text-[14px] text-content-dim mt-0.5">
+            {tr("your_offer_sub")}
+          </p>
+        )}
       </div>
 
       {/* Empty state */}
@@ -72,8 +76,9 @@ export default function KlantPage() {
         </div>
       )}
 
-      {/* Card lists */}
-      <div className="flex-1 flex flex-col gap-5 px-5 stagger">
+      {/* Card lists — vertically centered so a short offer presents like a
+          slide instead of hanging at the top of a mostly empty screen */}
+      <div className="flex-1 flex flex-col justify-center gap-5 px-5 pb-6 stagger">
         {/* Inkoop section */}
         {inkoop.length > 0 && (
           <section className="flex flex-col gap-2">
@@ -137,6 +142,13 @@ export default function KlantPage() {
                 {fmt(totalTrade)}
               </span>
             </div>
+            {/* Clarify what "inruil" actually means for the customer: it's
+                store credit to spend on other cards, not a literal swap and
+                not cash — this is the piece that was missing entirely. */}
+            <p className="flex items-center gap-1.5 text-[12px] text-content-dim px-1">
+              <span className="ms text-[14px] text-trade">storefront</span>
+              {tr("trade_credit_hint")}
+            </p>
           </section>
         )}
       </div>

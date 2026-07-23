@@ -46,7 +46,9 @@ const MOCK_RESULTS = [
   },
 ];
 
-const isDemoMode = !process.env.RAPIDAPI_KEY || process.env.RAPIDAPI_KEY === "your_rapidapi_key_here";
+const isDemoMode =
+  !process.env.TCGGO_RAPIDAPI_KEY ||
+  process.env.TCGGO_RAPIDAPI_KEY === "your_tcggo_rapidapi_key_here";
 
 export async function GET(req: NextRequest) {
   const q = req.nextUrl.searchParams.get("q") ?? "";

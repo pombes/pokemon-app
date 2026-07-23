@@ -22,6 +22,7 @@ import {
 } from "@/lib/db";
 import { fmt, fmtSigned, fmtDay, fmtTime, parseDutch } from "@/lib/format";
 import { transactionsCsv, downloadCsv } from "@/lib/export";
+import { useCountUp } from "@/hooks/useCountUp";
 
 const PAYMENT_OPTIONS: { value: PaymentMethod; labelKey: TKey }[] = [
   { value: "cash", labelKey: "pay_cash" },
@@ -123,6 +124,8 @@ export default function VoorraadPage() {
   );
 
   const unrealized = totalMarket - totalPurchase;
+  const unrealizedPct = totalPurchase > 0 ? (unrealized / totalPurchase) * 100 : 0;
+  const marketAnimated = useCountUp(totalMarket, 600);
 
   const realizedProfit = useMemo(
     () =>
@@ -318,29 +321,57 @@ export default function VoorraadPage() {
         </button>
       </div>
 
-      {/* Stats strip */}
-      <div className="grid grid-cols-3 gap-2 animate-rise">
-        <StatCard label={tr("stat_cards")} value={String(totalCards)} />
-        <StatCard label={tr("stat_total_cost")} value={fmt(totalPurchase)} />
-        <StatCard
-          label={tr("stat_market_value")}
-          value={fmt(totalMarket)}
-          accent={totalMarket >= totalPurchase ? "trade" : "danger"}
-        />
-      </div>
-
-      {/* Profit strip */}
-      <div className="grid grid-cols-2 gap-2 animate-rise">
-        <StatCard
-          label={tr("stat_unrealized")}
-          value={fmtSigned(unrealized)}
-          accent={unrealized >= 0 ? "trade" : "danger"}
-        />
-        <StatCard
-          label={tr("stat_realized")}
-          value={fmtSigned(realizedProfit)}
-          accent={realizedProfit >= 0 ? "trade" : "danger"}
-        />
+      {/* Portfolio hero — one number that matters, the rest supports it */}
+      <div className="relative overflow-hidden ticket border border-edge rounded-[20px] p-5 animate-rise">
+        <div className="absolute -top-16 -right-16 w-48 h-48 rounded-full bg-gold/7 blur-3xl" />
+        <div className="flex items-start justify-between">
+          <span className="text-[11px] font-bold text-content-dim uppercase tracking-[0.08em]">
+            {tr("stat_market_value")}
+          </span>
+          <span className="text-[11px] font-semibold text-content-dim bg-surface-card border border-edge rounded-full px-2.5 py-1">
+            {totalCards === 1
+              ? tr("card_count_one")
+              : tr("cards_count", { n: totalCards })}
+          </span>
+        </div>
+        <div className="font-mono font-black text-[34px] text-content tracking-tight tabular-nums leading-tight mt-1">
+          {fmt(marketAnimated)}
+        </div>
+        {inventory.length > 0 && (
+          <div
+            className={`flex items-center gap-1.5 mt-1 text-[13px] font-mono font-bold tabular-nums ${
+              unrealized >= 0 ? "text-trade" : "text-danger"
+            }`}
+          >
+            <span className="ms text-[16px]">
+              {unrealized >= 0 ? "trending_up" : "trending_down"}
+            </span>
+            {fmtSigned(unrealized)} ({unrealized >= 0 ? "+" : "−"}
+            {Math.abs(unrealizedPct).toFixed(1).replace(".", ",")}%)
+            <span className="text-content-faint font-sans font-medium">
+              · {tr("stat_unrealized").toLowerCase()}
+            </span>
+          </div>
+        )}
+        <div className="flex items-center gap-4 border-t border-edge mt-4 pt-3">
+          <div className="flex-1 min-w-0">
+            <div className="text-[11px] text-content-faint">{tr("stat_total_cost")}</div>
+            <div className="font-mono font-bold text-[14px] text-content tabular-nums truncate">
+              {fmt(totalPurchase)}
+            </div>
+          </div>
+          <div className="w-px h-8 bg-edge flex-none" />
+          <div className="flex-1 min-w-0">
+            <div className="text-[11px] text-content-faint">{tr("stat_realized")}</div>
+            <div
+              className={`font-mono font-bold text-[14px] tabular-nums truncate ${
+                realizedProfit >= 0 ? "text-trade" : "text-danger"
+              }`}
+            >
+              {fmtSigned(realizedProfit)}
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Performance tiles — tap to filter the card list */}
@@ -944,31 +975,6 @@ export default function VoorraadPage() {
   );
 }
 
-// ─── Stat card ────────────────────────────────────────────────────────────────
-
-function StatCard({
-  label,
-  value,
-  accent,
-}: {
-  label: string;
-  value: string;
-  accent?: "trade" | "danger";
-}) {
-  const valueColor =
-    accent === "trade" ? "text-trade" : accent === "danger" ? "text-danger" : "text-content";
-  return (
-    <div className="ticket border border-edge rounded-2xl px-3 py-3 flex flex-col gap-1 min-w-0">
-      <span className="text-[10px] font-bold text-content-dim uppercase tracking-[0.08em] truncate">
-        {label}
-      </span>
-      <span className={`font-mono font-bold text-[15px] tracking-tight tabular-nums truncate ${valueColor}`}>
-        {value}
-      </span>
-    </div>
-  );
-}
-
 // ─── Performance tile ─────────────────────────────────────────────────────────
 
 function PerfTile({
@@ -988,19 +994,34 @@ function PerfTile({
   active: boolean;
   onClick: () => void;
 }) {
+  // Empty categories stay quiet: no colored €0,00 alarm, not clickable.
+  const empty = count === 0;
   return (
     <button
       onClick={onClick}
+      disabled={empty}
       className={`press rounded-2xl px-3 py-3 border flex flex-col gap-1 min-w-0 text-left transition-colors ${
-        active ? "border-gold/60 bg-gold/10" : "ticket border-edge"
+        active
+          ? "border-gold/60 bg-gold/10"
+          : empty
+          ? "ticket border-edge opacity-45"
+          : "ticket border-edge"
       }`}
     >
-      <span className={`ms text-[18px] ${tone}`}>{icon}</span>
+      <span className={`ms text-[18px] ${empty ? "text-content-faint" : tone}`}>
+        {icon}
+      </span>
       <span className="text-[10px] font-bold text-content-dim uppercase tracking-[0.08em] truncate">
         {label}
       </span>
       <span className="font-mono font-bold text-[12px] tabular-nums truncate text-content">
-        {count}× <span className={tone}>{fmtSigned(total)}</span>
+        {empty ? (
+          <span className="text-content-faint">—</span>
+        ) : (
+          <>
+            {count}× <span className={tone}>{fmtSigned(total)}</span>
+          </>
+        )}
       </span>
     </button>
   );

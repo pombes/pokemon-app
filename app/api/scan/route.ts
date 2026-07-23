@@ -25,12 +25,14 @@ export async function POST(req: NextRequest) {
   }
 
   if (!key || key === "your_ximilar_key_here") {
-    // Demo mode — pretend we recognized a graded slab so the eBay flow
-    // is fully demonstrable without a Ximilar key.
+    // Demo mode — pretend we recognized a graded slab. We use a card that
+    // exists in the pricing catalog (Charizard ex, Obsidian Flames, #223)
+    // so the eBay flow shows REAL sold medians, not just placeholder data.
     return NextResponse.json({
-      name: "Charizard",
-      set: "Base Set",
-      slab: { company: "PSA", grade: "9" },
+      name: "Charizard ex",
+      set: "Obsidian Flames",
+      number: "223",
+      slab: { company: "PSA", grade: "10" },
       demo: true,
     });
   }
@@ -89,9 +91,15 @@ export async function POST(req: NextRequest) {
           }
         : null;
 
+    // Card number, when Ximilar provides it — the reliable key for matching
+    // the exact card (many share a name+set) against the pricing catalog.
+    const number =
+      best.card_number ?? best.number ?? best.full_name_number ?? null;
+
     return NextResponse.json({
       name: best.name as string,
       set: (best.set ?? "") as string,
+      ...(number != null ? { number: String(number) } : {}),
       ...(slab ? { slab } : {}),
     });
   } catch {

@@ -8,6 +8,9 @@
  *   inventory     — cards the vendor owns (fase 2)
  *   transactions  — every buy/sell/trade, source for dagoverzicht (fase 2)
  *   parkedDeals   — paused carts ("klant komt zo terug")
+ *   priceLookups  — every price we ever fetched, one row per card per day.
+ *                   Always written; builds our own EU price history for the
+ *                   (dormant) price chart.
  */
 
 import { openDB, type DBSchema, type IDBPDatabase } from "idb";
@@ -99,6 +102,16 @@ export type VendorSettings = {
   bidTiers?: BidTier[];         // price-range percentage overrides
 };
 
+/** One observed price for a card on a given day (own price history). */
+export type PriceLookup = {
+  id: string;                       // `${cardId}|${day}` — dedupes per day
+  cardId: string;                   // card id, or "ebay:<query>" for slabs
+  price: number;                    // EUR
+  source: "cardmarket" | "ebay";
+  day: string;                      // "2026-07-13"
+  createdAt: number;
+};
+
 export type CachedPrice = {
   cardId: string;
   cardName: string;
@@ -142,6 +155,11 @@ interface CardPitDB extends DBSchema {
     key: string;           // ParkedDeal.id
     value: ParkedDeal;
   };
+  priceLookups: {
+    key: string;           // PriceLookup.id
+    value: PriceLookup;
+    indexes: { "by-card": string };
+  };
 }
 
 // ─── DB singleton ─────────────────────────────────────────────────────────────
@@ -150,7 +168,7 @@ let dbPromise: Promise<IDBPDatabase<CardPitDB>> | null = null;
 
 export function getDB(): Promise<IDBPDatabase<CardPitDB>> {
   if (!dbPromise) {
-    dbPromise = openDB<CardPitDB>("cardpit", 3, {
+    dbPromise = openDB<CardPitDB>("cardpit", 4, {
       upgrade(db, oldVersion) {
         if (oldVersion < 1) {
           const cartStore = db.createObjectStore("cart", { keyPath: "id" });
@@ -166,6 +184,10 @@ export function getDB(): Promise<IDBPDatabase<CardPitDB>> {
         }
         if (oldVersion < 3) {
           db.createObjectStore("parkedDeals", { keyPath: "id" });
+        }
+        if (oldVersion < 4) {
+          const pl = db.createObjectStore("priceLookups", { keyPath: "id" });
+          pl.createIndex("by-card", "cardId");
         }
       },
     });

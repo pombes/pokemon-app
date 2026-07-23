@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import { useSettings, useT } from "@/hooks/useSettings";
 import { useCart } from "@/context/CartContext";
 import ConditionButtons from "@/components/ConditionButtons";
@@ -15,9 +16,18 @@ import {
 } from "@/lib/db";
 import { bidPercentages, roundBid } from "@/lib/bids";
 import { fmt, fmtAge, parseDutch } from "@/lib/format";
+import { SHOW_PRICE_CHART } from "@/lib/config";
+import { logPriceLookup } from "@/lib/historyService";
 
 const RECENT_KEY = "cardpit_recent";
 const RECENT_MAX = 8;
+
+// Lazy: the (heavy) chart bundle is only fetched when the flag is on and
+// the component actually mounts — the bidding flow is never delayed by it.
+const PriceChart = dynamic(() => import("@/components/PriceChart"), {
+  ssr: false,
+  loading: () => null,
+});
 
 const CACHE_TTL = 4 * 60 * 60 * 1000; // 4 hours
 
@@ -45,12 +55,23 @@ type EbayData = {
   demo?: boolean;
 };
 
-type SlabInfo = { name: string; set: string; company: string; grade: string };
+type SlabInfo = {
+  name: string;
+  set: string;
+  number: string;
+  company: string;
+  grade: string;
+};
 
 function slabQuery(s: SlabInfo): string {
   return [s.name, s.set, `${s.company} ${s.grade}`.trim()]
     .filter(Boolean)
     .join(" ");
+}
+
+/** "2026-07-19" voor ts + offset dagen — voor de API-fallback van de chart. */
+function chartDay(ts: number, offsetDays: number): string {
+  return new Date(ts + offsetDays * 86_400_000).toISOString().slice(0, 10);
 }
 
 export default function ZoekenPage() {
@@ -205,7 +226,7 @@ export default function ZoekenPage() {
           setIsSearching(false);
         }
       },
-      q.length < 2 ? 0 : 400
+      q.length < 2 ? 0 : 550
     );
     return () => clearTimeout(timer);
   }, [query, selected, slab]);
@@ -293,6 +314,8 @@ export default function ZoekenPage() {
         await setCachedPrice(p).catch(() => {});
         setPrice(p);
         setPriceFromCache(false);
+        // Always-on history logging (feeds the dormant price chart)
+        void logPriceLookup(card.id, p.trendPrice, "cardmarket");
       } else {
         setPriceError(data.error ?? tr("no_price"));
       }
@@ -329,12 +352,22 @@ export default function ZoekenPage() {
     setEbayError("");
     setEbayLoading(true);
     try {
-      const res = await fetch(`/api/ebay?q=${encodeURIComponent(slabQuery(info))}`);
+      const params = new URLSearchParams({
+        q: slabQuery(info),
+        name: info.name,
+        set: info.set,
+        number: info.number,
+        company: info.company,
+        grade: info.grade,
+      });
+      const res = await fetch(`/api/ebay?${params.toString()}`);
       const data = await res.json();
       if (res.ok && data.items) {
         setEbay(data);
         if (data.stats?.median > 0) {
           setPriceOverride(data.stats.median.toFixed(2).replace(".", ","));
+          // Slabs: log the eBay median for this exact grade
+          void logPriceLookup(`ebay:${slabQuery(info)}`, data.stats.median, "ebay");
         }
       } else {
         setEbayError(data.error ?? tr("ebay_error"));
@@ -368,6 +401,7 @@ export default function ZoekenPage() {
           void enterSlab({
             name: data.name,
             set: data.set ?? "",
+            number: data.number ?? "",
             company: data.slab.company ?? "",
             grade: data.slab.grade ?? "",
           });
@@ -902,6 +936,27 @@ export default function ZoekenPage() {
               {qty > 1 ? ` ×${qty}` : ""}
             </button>
           </div>
+
+          {/* Price history chart — flag-gated. Rendered below the whole
+              bidding flow so it can never push it down; the flag check here
+              also keeps the chart bundle from ever being downloaded. Until
+              our own logged history has ≥2 days, the chart falls back to
+              the API's avg30/avg7/avg1/trend points. */}
+          {SHOW_PRICE_CHART && (slab || selected?.id) && (
+            <PriceChart
+              lookupKey={slab ? `ebay:${slabQuery(slab)}` : selected!.id}
+              fallback={
+                !slab && price
+                  ? [
+                      { day: chartDay(price.fetchedAt, -30), price: price.avg30 },
+                      { day: chartDay(price.fetchedAt, -7), price: price.avg7 },
+                      { day: chartDay(price.fetchedAt, -1), price: price.avg1 },
+                      { day: chartDay(price.fetchedAt, 0), price: price.trendPrice },
+                    ]
+                  : undefined
+              }
+            />
+          )}
         </div>
       )}
 

@@ -62,6 +62,10 @@ const nl = {
   removed_from_deal: "{name} verwijderd",
   float_today: "{amount} inkoop vandaag",
 
+  // Prijsverloop (dormant chart)
+  price_history: "Prijsverloop",
+  range_all: "Alles",
+
   // Handmatige invoer (kaart niet in API)
   no_results_for: "Niets gevonden voor “{q}”",
   enter_manually: "Handmatig invoeren",
@@ -161,7 +165,10 @@ const nl = {
 
   // Klantscherm
   your_offer: "Jouw aanbieding",
-  your_offer_sub: "Kies wat jou het beste past",
+  // Nooit als keuze framen — de vendor heeft al per kaart bepaald wat cash
+  // is en wat tegoed; dit scherm is een kwitantie, geen menukaart.
+  your_offer_sub: "Verdeeld over cash en tegoed",
+  trade_credit_hint: "Tegoed, te besteden aan andere kaarten uit onze voorraad",
   no_cards_in_deal: "Geen kaarten in de deal",
   back: "Terug",
 
@@ -260,6 +267,9 @@ const en: Record<TKey, string> = {
   removed_from_deal: "{name} removed",
   float_today: "{amount} spent today",
 
+  price_history: "Price history",
+  range_all: "All",
+
   no_results_for: "Nothing found for “{q}”",
   enter_manually: "Enter manually",
   manual_price_hint: "No API price for this card — just fill in the price below and keep going.",
@@ -353,7 +363,10 @@ const en: Record<TKey, string> = {
   sold_for: "Sold for {price} ({profit})",
 
   your_offer: "Your offer",
-  your_offer_sub: "Pick what suits you best",
+  // Never framed as a choice — the vendor already decided per card what's
+  // cash and what's credit; this screen is a receipt, not a menu.
+  your_offer_sub: "Split across cash and store credit",
+  trade_credit_hint: "Store credit, to spend on other cards from our stock",
   no_cards_in_deal: "No cards in the deal",
   back: "Back",
 

@@ -9,14 +9,14 @@ export default function BottomNav() {
   const pathname = usePathname();
   const { items } = useCart();
   const { tr } = useT();
-  const cartCount = items.length;
+  const cartCount = items.reduce((s, i) => s + i.quantity, 0);
 
   return (
     <nav
       className="fixed bottom-0 inset-x-0 border-t border-edge bg-surface/90 backdrop-blur-xl z-50"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
-      <div className="flex w-full max-w-[480px] mx-auto">
+      <div className="flex w-full max-w-[480px] mx-auto sm:border-x sm:border-edge">
         <NavItem
           href="/zoeken"
           icon="search"

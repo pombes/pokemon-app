@@ -272,7 +272,7 @@ function SettingsForm({
                   min={0}
                   value={tier.from}
                   onChange={(e) => setTier(i, { from: Number(e.target.value) })}
-                  className="w-14 bg-surface-card border border-edge rounded-lg text-right px-2 py-1 font-mono font-bold text-[15px] text-content outline-none focus:border-gold/60 tabular-nums"
+                  className="w-[58px] bg-surface-card border border-edge rounded-lg text-right px-2 py-1 font-mono font-bold text-[14px] text-content outline-none focus:border-gold/60 tabular-nums"
                 />
                 <span className="ms text-[16px] text-gold flex-none ml-1">payments</span>
                 <input
@@ -281,7 +281,7 @@ function SettingsForm({
                   max={100}
                   value={tier.cashPct}
                   onChange={(e) => setTier(i, { cashPct: Number(e.target.value) })}
-                  className="w-12 bg-surface-card border border-edge rounded-lg text-right px-1.5 py-1 font-mono font-bold text-[15px] text-gold-bright outline-none focus:border-gold/60 tabular-nums"
+                  className="w-[52px] bg-surface-card border border-edge rounded-lg text-right px-1.5 py-1 font-mono font-bold text-[14px] text-gold-bright outline-none focus:border-gold/60 tabular-nums"
                 />
                 <span className="ms text-[16px] text-trade flex-none">swap_horiz</span>
                 <input
@@ -290,7 +290,7 @@ function SettingsForm({
                   max={100}
                   value={tier.tradePct}
                   onChange={(e) => setTier(i, { tradePct: Number(e.target.value) })}
-                  className="w-12 bg-surface-card border border-edge rounded-lg text-right px-1.5 py-1 font-mono font-bold text-[15px] text-trade outline-none focus:border-gold/60 tabular-nums"
+                  className="w-[52px] bg-surface-card border border-edge rounded-lg text-right px-1.5 py-1 font-mono font-bold text-[14px] text-trade outline-none focus:border-gold/60 tabular-nums"
                 />
                 <span className="text-[12px] text-content-dim flex-none">%</span>
                 <button
@@ -344,7 +344,7 @@ function SettingsForm({
                   max={150}
                   value={multipliers[c]}
                   onChange={(e) => setMult(c, Number(e.target.value))}
-                  className="w-14 bg-surface-card border border-edge rounded-lg text-right px-2 py-1 font-mono font-bold text-[16px] text-content outline-none focus:border-gold/60 tabular-nums"
+                  className="w-[62px] bg-surface-card border border-edge rounded-lg text-right px-2 py-1 font-mono font-bold text-[15px] text-content outline-none focus:border-gold/60 tabular-nums"
                 />
                 <span className="text-[13px] text-content-dim">%</span>
               </div>

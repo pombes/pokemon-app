@@ -285,11 +285,14 @@ export default function WinkelwagenPage() {
 
         {/* Empty state */}
         {!hasItems && (
-          <div className="flex-1 flex flex-col items-center justify-center gap-4 py-20">
-            <div className="w-16 h-16 rounded-2xl bg-surface-raised border border-edge flex items-center justify-center">
-              <span className="ms text-3xl text-content-faint">
-                shopping_basket
-              </span>
+          <div className="flex-1 flex flex-col items-center justify-center gap-4 py-20 animate-rise-lg">
+            <div className="relative">
+              <div className="w-20 h-28 rounded-xl border-2 border-dashed border-edge-bright rotate-[-8deg]" />
+              <div className="absolute top-0 left-3 w-20 h-28 rounded-xl border-2 border-edge bg-surface-raised rotate-[6deg] flex items-center justify-center">
+                <span className="ms text-3xl text-content-faint">
+                  shopping_basket
+                </span>
+              </div>
             </div>
             <p className="text-[15px] text-content-dim text-center max-w-[200px]">
               {tr("cart_empty")}
@@ -315,6 +318,7 @@ export default function WinkelwagenPage() {
             onQty={updateQty}
             totalLabel={tr("total_cash")}
             total={totalCash}
+            showTotal={inruil.length > 0}
           />
         )}
 
@@ -330,6 +334,8 @@ export default function WinkelwagenPage() {
             onQty={updateQty}
             totalLabel={tr("total_trade")}
             total={totalTrade}
+            showTotal={inkoop.length > 0}
+            hint={tr("trade_credit_hint")}
           />
         )}
       </div>
@@ -497,6 +503,8 @@ function CartSection({
   onQty,
   totalLabel,
   total,
+  showTotal,
+  hint,
 }: {
   title: string;
   icon: string;
@@ -507,6 +515,10 @@ function CartSection({
   onQty: (id: string, delta: number) => void;
   totalLabel: string;
   total: number;
+  // Section subtotal is only useful next to ANOTHER section; with a single
+  // section it would duplicate the grand total right below it.
+  showTotal: boolean;
+  hint?: string;
 }) {
   const toneText = tone === "gold" ? "text-gold" : "text-trade";
   const toneBright = tone === "gold" ? "text-gold-bright" : "text-trade";
@@ -519,6 +531,7 @@ function CartSection({
           {title}
         </h2>
       </div>
+      {hint && <p className="text-[12px] text-content-dim px-1 -mt-1">{hint}</p>}
       <div className="flex flex-col gap-2">
         {items.map((item) => (
           <div
@@ -565,24 +578,30 @@ function CartSection({
               <span className={`font-mono font-bold text-[16px] tabular-nums ${toneBright}`}>
                 {fmt(amount(item) * item.quantity)}
               </span>
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => onQty(item.id, -1)}
-                  className="press w-7 h-7 rounded-lg bg-surface-card border border-edge flex items-center justify-center text-content-dim"
-                >
-                  <span className="ms text-[15px]">remove</span>
-                </button>
-                <button
-                  onClick={() => onQty(item.id, 1)}
-                  className="press w-7 h-7 rounded-lg bg-surface-card border border-edge flex items-center justify-center text-content-dim"
-                >
-                  <span className="ms text-[15px]">add</span>
-                </button>
+              <div className="flex items-center gap-2">
+                {/* Joined stepper pill with the count visible in the middle */}
+                <div className="flex items-center rounded-lg border border-edge bg-surface-card overflow-hidden">
+                  <button
+                    onClick={() => onQty(item.id, -1)}
+                    className="press w-7 h-7 flex items-center justify-center text-content-dim"
+                  >
+                    <span className="ms text-[14px]">remove</span>
+                  </button>
+                  <span className="w-6 text-center font-mono font-bold text-[12px] text-content tabular-nums border-x border-edge leading-7">
+                    {item.quantity}
+                  </span>
+                  <button
+                    onClick={() => onQty(item.id, 1)}
+                    className="press w-7 h-7 flex items-center justify-center text-content-dim"
+                  >
+                    <span className="ms text-[14px]">add</span>
+                  </button>
+                </div>
                 <button
                   onClick={() => onRemove(item.id)}
                   className="press w-7 h-7 rounded-lg flex items-center justify-center text-content-ghost active:text-danger transition-colors"
                 >
-                  <span className="ms text-[18px]">delete</span>
+                  <span className="ms text-[17px]">delete</span>
                 </button>
               </div>
             </div>
@@ -590,12 +609,14 @@ function CartSection({
         ))}
       </div>
 
-      <div className="flex items-center justify-between px-1 mt-0.5">
-        <span className="text-[13px] text-content-dim font-medium">{totalLabel}</span>
-        <span className={`font-mono font-bold text-[16px] tabular-nums ${toneBright}`}>
-          {fmt(total)}
-        </span>
-      </div>
+      {showTotal && (
+        <div className="flex items-center justify-between px-1 mt-0.5">
+          <span className="text-[13px] text-content-dim font-medium">{totalLabel}</span>
+          <span className={`font-mono font-bold text-[16px] tabular-nums ${toneBright}`}>
+            {fmt(total)}
+          </span>
+        </div>
+      )}
     </section>
   );
 }

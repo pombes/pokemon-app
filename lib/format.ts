@@ -1,14 +1,19 @@
 import { t, type Lang } from "./i18n";
 
-/** Format a number as a Dutch EUR price: € 84,50 */
+const EUR = new Intl.NumberFormat("nl-NL", {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
+/** Format a number as a Dutch EUR price: € 1.168,65 */
 export function fmt(amount: number): string {
-  return `€ ${amount.toFixed(2).replace(".", ",")}`;
+  return `€ ${EUR.format(amount)}`;
 }
 
 /** Signed variant for winst/verlies: +€ 12,00 / −€ 3,50 */
 export function fmtSigned(amount: number): string {
   const sign = amount >= 0 ? "+" : "−";
-  return `${sign}€ ${Math.abs(amount).toFixed(2).replace(".", ",")}`;
+  return `${sign}€ ${EUR.format(Math.abs(amount))}`;
 }
 
 /** Format milliseconds as an age string: "3 min geleden" / "3 min ago" */
